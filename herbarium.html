@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herbarium — Master Study App</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #090c06;
+  --surface: #111408;
+  --surface2: #181c0d;
+  --surface3: #1f2411;
+  --green: #8bc34a;
+  --green-dim: #4e7a20;
+  --green-dark: #2a4010;
+  --gold: #d4a843;
+  --gold-dim: #8a6c2a;
+  --cream: #ede5cc;
+  --muted: #5a6645;
+  --red: #d45a4a;
+  --blue: #5a9fd4;
+  --correct: #66bb6a;
+  --wrong: #ef5350;
+  --white: #f5edd8;
+  --border: rgba(139,195,74,0.12);
+  --border-hover: rgba(139,195,74,0.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--cream);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden;}
+
+/* GRAIN */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.5;}
+
+/* BG GLOW */
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 50% at 15% 60%,rgba(78,122,32,.07) 0%,transparent 70%),
+             radial-gradient(ellipse 50% 40% at 85% 20%,rgba(139,195,74,.04) 0%,transparent 60%),
+             radial-gradient(ellipse 40% 60% at 50% 90%,rgba(212,168,67,.03) 0%,transparent 70%);}
+
+/* LAYOUT */
+.app{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:1.5rem 1.2rem 4rem;}
+
+/* NAV TABS */
+.nav-tabs{display:flex;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:1.8rem;animation:fadeDown .5s ease both;}
+.nav-tab{flex:1;background:transparent;border:none;border-radius:7px;padding:.65rem .5rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s;text-align:center;}
+.nav-tab:hover{color:var(--cream);}
+.nav-tab.active{background:var(--surface3);color:var(--green);border:1px solid var(--border);}
+
+/* HEADER */
+.app-header{text-align:center;padding:1.5rem 0 1rem;animation:fadeDown .5s ease both;}
+.logo{font-size:1.8rem;margin-bottom:.4rem;display:block;filter:drop-shadow(0 0 16px rgba(139,195,74,.35));}
+.app-title{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;color:var(--white);letter-spacing:.04em;line-height:1;}
+.app-title span{color:var(--green);}
+.app-sub{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:.3rem;}
+
+/* SECTION PANELS */
+.panel{display:none;animation:fadeUp .35s ease both;}
+.panel.active{display:block;}
+
+/* STATS BAR */
+.stats-bar{display:flex;justify-content:space-around;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.8rem;margin-bottom:1.2rem;}
+.stat{display:flex;flex-direction:column;align-items:center;gap:.15rem;}
+.stat-val{font-size:1.25rem;font-weight:500;color:var(--gold);}
+.stat-val.green{color:var(--green);}
+.stat-label{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+
+/* PROGRESS */
+.progress-track{height:2px;background:var(--surface2);border-radius:1px;margin-bottom:1.4rem;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green-dim),var(--green));border-radius:1px;transition:width .5s ease;box-shadow:0 0 8px rgba(139,195,74,.4);}
+
+/* MODE ROW */
+.controls-row{display:flex;gap:.6rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.ctrl-group{display:flex;gap:.4rem;flex:1;min-width:200px;}
+.mode-btn{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.55rem .4rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .18s;text-align:center;}
+.mode-btn:hover{border-color:var(--border-hover);color:var(--cream);}
+.mode-btn.active{border-color:var(--green);color:var(--green);background:rgba(139,195,74,.07);}
+
+/* QUESTION CARD */
+.q-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.8rem;margin-bottom:1rem;position:relative;overflow:hidden;animation:cardIn .4s ease both;}
+.q-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(139,195,74,.06),transparent 70%);pointer-events:none;}
+.q-pill{display:inline-flex;align-items:center;gap:.4rem;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);background:rgba(212,168,67,.1);border:1px solid rgba(212,168,67,.2);border-radius:20px;padding:.22rem .7rem;margin-bottom:.9rem;}
+.q-num{font-size:.62rem;color:var(--muted);letter-spacing:.1em;margin-bottom:.4rem;}
+.q-text{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:400;line-height:1.45;color:var(--white);margin-bottom:.4rem;}
+.q-text em{font-style:italic;color:var(--green);}
+.q-sub{font-size:.65rem;color:var(--muted);margin-bottom:1.4rem;letter-spacing:.04em;}
+
+/* OPTIONS GRID */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.opt-btn{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.85rem .9rem;color:var(--cream);font-family:'JetBrains Mono',monospace;font-size:.76rem;cursor:pointer;text-align:left;transition:all .18s;position:relative;overflow:hidden;line-height:1.45;}
+.opt-btn:hover:not(:disabled){border-color:var(--border-hover);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.35);}
+.opt-btn:active:not(:disabled){transform:translateY(0);}
+.opt-btn.correct{background:rgba(102,187,106,.13);border-color:var(--correct);color:#a5d6a7;animation:pulse .4s ease;}
+.opt-btn.wrong{background:rgba(239,83,80,.1);border-color:var(--wrong);color:#ef9a9a;animation:shake .35s ease;}
+.opt-btn.reveal{opacity:.35;}
+.opt-btn:disabled{cursor:default;}
+.opt-key{display:inline-block;width:16px;height:16px;background:rgba(139,195,74,.1);border-radius:3px;text-align:center;line-height:16px;font-size:.6rem;color:var(--green-dim);margin-right:.45rem;vertical-align:middle;flex-shrink:0;}
+
+/* HARD MODE INPUT */
+.hard-input-wrap{position:relative;margin-bottom:1rem;}
+.hard-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.9rem 1rem;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.85rem;outline:none;transition:border-color .2s;letter-spacing:.03em;}
+.hard-input:focus{border-color:var(--green);}
+.hard-input.correct{border-color:var(--correct);background:rgba(102,187,106,.08);}
+.hard-input.wrong{border-color:var(--wrong);background:rgba(239,83,80,.07);}
+.hard-submit{width:100%;margin-top:.6rem;background:var(--surface3);border:1px solid var(--border);border-radius:9px;padding:.8rem;color:var(--cream);font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.hard-submit:hover{border-color:var(--border-hover);color:var(--green);}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:0 0 9px 9px;z-index:100;max-height:180px;overflow-y:auto;display:none;}
+.autocomplete-list.show{display:block;}
+.ac-item{padding:.6rem 1rem;font-size:.75rem;color:var(--cream);cursor:pointer;transition:background .15s;}
+.ac-item:hover{background:rgba(139,195,74,.08);color:var(--green);}
+
+/* FEEDBACK */
+.feedback{border-radius:9px;padding:.9rem 1.1rem;margin-bottom:.9rem;display:none;}
+.feedback.show{display:block;animation:fadeUp .3s ease both;}
+.feedback.correct-fb{background:rgba(102,187,106,.08);border:1px solid rgba(102,187,106,.22);}
+.feedback.wrong-fb{background:rgba(239,83,80,.07);border:1px solid rgba(239,83,80,.18);}
+.fb-title{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-bottom:.4rem;}
+.correct-fb .fb-title{color:var(--correct);}
+.wrong-fb .fb-title{color:var(--wrong);}
+.fb-body{font-size:.76rem;color:var(--cream);line-height:1.65;}
+.fb-body strong{color:var(--gold);}
+.fb-body em{color:var(--muted);font-style:italic;}
+.fb-actions-list{margin-top:.5rem;display:flex;flex-wrap:wrap;gap:.3rem;}
+.action-chip{background:rgba(139,195,74,.08);border:1px solid rgba(139,195,74,.18);border-radius:12px;padding:.18rem .6rem;font-size:.62rem;color:var(--green);}
+
+/* NEXT BTN */
+.next-btn{width:100%;background:linear-gradient(135deg,var(--green-dim),var(--green));border:none;border-radius:9px;padding:.95rem;color:#090c06;font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;display:none;box-shadow:0 4px 20px rgba(139,195,74,.22);}
+.next-btn.show{display:block;animation:fadeUp .3s .1s ease both;}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(139,195,74,.32);}
+
+/* SPLASH */
+.splash{text-align:center;padding:2rem 0;}
+.splash-icon{font-size:4.5rem;display:block;margin-bottom:1rem;filter:drop-shadow(0 0 20px rgba(139,195,74,.3));}
+.splash h2{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:600;color:var(--white);margin-bottom:.5rem;}
+.splash p{font-size:.74rem;color:var(--muted);line-height:1.75;max-width:400px;margin:0 auto 1.5rem;}
+.herb-chips{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin:1rem 0 1.8rem;max-width:460px;margin-left:auto;margin-right:auto;}
+.herb-chip{background:rgba(139,195,74,.07);border:1px solid rgba(139,195,74,.18);border-radius:16px;padding:.25rem .7rem;font-size:.62rem;color:var(--green);letter-spacing:.04em;}
+.start-btn{background:linear-gradient(135deg,var(--green-dim),var(--green));border:none;border-radius:11px;padding:1rem 2.5rem;color:#090c06;font-family:'JetBrains Mono',monospace;font-size:.85rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s;box-shadow:0 4px 24px rgba(139,195,74,.28);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(139,195,74,.38);}
+
+/* RESULTS */
+.result-screen{text-align:center;padding:1.5rem 0;display:none;}
+.result-screen.show{display:block;animation:fadeUp .5s ease both;}
+.result-emoji{font-size:3.5rem;margin-bottom:.8rem;}
+.result-score{font-family:'Cormorant Garamond',serif;font-size:4.5rem;color:var(--gold);line-height:1;margin-bottom:.3rem;}
+.result-pct{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1.8rem;}
+.breakdown{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem;margin-bottom:1.2rem;text-align:left;max-height:280px;overflow-y:auto;}
+.bd-row{display:flex;justify-content:space-between;align-items:center;padding:.38rem 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:.72rem;gap:.5rem;}
+.bd-row:last-child{border-bottom:none;}
+.bd-herb{color:var(--cream);flex:1;}
+.bd-ok{color:var(--correct);}
+.bd-bad{color:var(--wrong);font-size:.65rem;}
+.restart-btn{width:100%;background:var(--surface);border:1px solid var(--border-hover);border-radius:9px;padding:.9rem;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.restart-btn:hover{background:rgba(139,195,74,.07);transform:translateY(-1px);}
+
+/* ====== NUTRIENTS MODULE ====== */
+.nutrients-panel .section-title{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;color:var(--white);margin-bottom:.3rem;}
+.nutrients-panel .section-sub{font-size:.65rem;color:var(--muted);letter-spacing:.1em;margin-bottom:1.4rem;}
+.nutrient-type-tabs{display:flex;gap:.5rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.nt-tab{flex:1;min-width:100px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:.55rem;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .18s;text-align:center;}
+.nt-tab:hover{color:var(--cream);}
+.nt-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(212,168,67,.08);}
+
+/* Nutrient quiz card — reuses .q-card */
+.nutrient-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.nutrient-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.nutrient-card:hover{border-color:var(--border-hover);transform:translateY(-2px);}
+.nutrient-card.selected{border-color:var(--gold);background:rgba(212,168,67,.07);}
+.nc-name{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:600;color:var(--white);margin-bottom:.2rem;}
+.nc-type{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
+.nc-desc{font-size:.68rem;color:var(--muted);line-height:1.55;display:none;}
+.nutrient-card.expanded .nc-desc{display:block;}
+.nc-badge{position:absolute;top:.7rem;right:.7rem;font-size:.55rem;padding:.2rem .5rem;border-radius:10px;letter-spacing:.1em;text-transform:uppercase;}
+.nc-badge.macro{background:rgba(90,159,212,.12);color:var(--blue);border:1px solid rgba(90,159,212,.2);}
+.nc-badge.micro{background:rgba(212,168,67,.1);color:var(--gold);border:1px solid rgba(212,168,67,.2);}
+.nc-badge.mineral{background:rgba(139,195,74,.1);color:var(--green);border:1px solid rgba(139,195,74,.2);}
+
+/* Nutrient quiz */
+.nq-answer-row{display:flex;gap:.5rem;margin-top:.8rem;}
+.nq-opt{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:.7rem .5rem;color:var(--cream);font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;text-align:center;transition:all .18s;line-height:1.4;}
+.nq-opt:hover:not(:disabled){border-color:var(--border-hover);}
+.nq-opt.correct{background:rgba(102,187,106,.12);border-color:var(--correct);color:#a5d6a7;animation:pulse .4s ease;}
+.nq-opt.wrong{background:rgba(239,83,80,.09);border-color:var(--wrong);color:#ef9a9a;animation:shake .35s ease;}
+.nq-opt.reveal{opacity:.35;}
+.nq-opt:disabled{cursor:default;}
+
+/* REFERENCE browser */
+.ref-search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:.8rem 1rem;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none;margin-bottom:1rem;transition:border-color .2s;letter-spacing:.03em;}
+.ref-search:focus{border-color:var(--green);}
+.ref-grid{display:grid;gap:.5rem;}
+.ref-item{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:.9rem 1rem;cursor:pointer;transition:all .18s;}
+.ref-item:hover{border-color:var(--border-hover);}
+.ref-item-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.2rem;}
+.ref-name{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--white);}
+.ref-latin{font-size:.62rem;color:var(--muted);font-style:italic;}
+.ref-primary{font-size:.65rem;color:var(--green);background:rgba(139,195,74,.08);border:1px solid rgba(139,195,74,.16);border-radius:10px;padding:.18rem .55rem;letter-spacing:.06em;}
+.ref-actions-preview{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.45rem;}
+.ref-body{display:none;margin-top:.7rem;font-size:.72rem;color:var(--muted);line-height:1.65;border-top:1px solid var(--border);padding-top:.7rem;}
+.ref-item.open .ref-body{display:block;}
+.ref-item.open .ref-name{color:var(--green);}
+
+/* ANIMATIONS */
+@keyframes fadeDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="app">
+
+  <div class="app-header">
+    <span class="logo">🌿</span>
+    <div class="app-title">Herba<span>rium</span></div>
+    <div class="app-sub">Materia Medica Study System</div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showSection('herbs')">🌱 Herbs Quiz</button>
+    <button class="nav-tab" onclick="showSection('nutrients')">⚗️ Nutrients Quiz</button>
+    <button class="nav-tab" onclick="showSection('reference')">📖 Reference</button>
+  </div>
+
+  <!-- ============ HERBS PANEL ============ -->
+  <div class="panel active" id="panel-herbs">
+
+    <div class="splash" id="herb-splash">
+      <span class="splash-icon">🌾</span>
+      <h2>Know Your Materia Medica</h2>
+      <p>100 herbs. Three quiz modes. Hard mode. Test your knowledge of herbal actions, systems, and clinical use.</p>
+      <div class="herb-chips" id="herb-preview-chips"></div>
+      <button class="start-btn" onclick="startHerbQuiz()">Begin Studying →</button>
+    </div>
+
+    <div id="herb-quiz-ui" style="display:none;">
+      <div class="stats-bar">
+        <div class="stat"><div class="stat-val" id="h-score">0</div><div class="stat-label">Score</div></div>
+        <div class="stat"><div class="stat-val green" id="h-streak">0</div><div class="stat-label">Streak</div></div>
+        <div class="stat"><div class="stat-val" id="h-progress">0/12</div><div class="stat-label">Progress</div></div>
+        <div class="stat"><div class="stat-val" id="h-accuracy">—</div><div class="stat-label">Accuracy</div></div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="h-progress-fill" style="width:0%"></div></div>
+
+      <div class="controls-row">
+        <div class="ctrl-group">
+          <button class="mode-btn active" id="m-action" onclick="setHerbMode('action')">Action→Herb</button>
+          <button class="mode-btn" id="m-herb" onclick="setHerbMode('herb')">Herb→Action</button>
+          <button class="mode-btn" id="m-mixed" onclick="setHerbMode('mixed')">Mixed</button>
+        </div>
+        <div class="ctrl-group" style="max-width:160px;">
+          <button class="mode-btn" id="m-easy" onclick="setDifficulty('easy')">Easy</button>
+          <button class="mode-btn active" id="m-hard" onclick="setDifficulty('hard')">Hard</button>
+        </div>
+      </div>
+
+      <div class="q-card" id="h-card">
+        <div class="q-pill" id="h-pill">Herbal Action</div>
+        <div class="q-num" id="h-qnum">Question 1</div>
+        <div class="q-text" id="h-qtext">Loading...</div>
+        <div class="q-sub" id="h-qsub"></div>
+        <!-- Easy mode -->
+        <div class="options-grid" id="h-options"></div>
+        <!-- Hard mode -->
+        <div id="h-hard-mode" style="display:none;">
+          <div class="hard-input-wrap">
+            <input class="hard-input" id="h-hard-input" type="text" placeholder="Type your answer..." autocomplete="off" oninput="hardInputChange(this)" onkeydown="hardKeyDown(event)">
+            <div class="autocomplete-list" id="h-autocomplete"></div>
+          </div>
+          <button class="hard-submit" id="h-hard-submit" onclick="submitHard()">Submit Answer</button>
+        </div>
+      </div>
+
+      <div class="feedback" id="h-feedback">
+        <div class="fb-title" id="h-fb-title"></div>
+        <div class="fb-body" id="h-fb-body"></div>
+      </div>
+      <button class="next-btn" id="h-next-btn" onclick="nextHerbQ()">Next →</button>
+    </div>
+
+    <div class="result-screen" id="herb-result">
+      <div class="result-emoji" id="h-res-emoji">🌿</div>
+      <div class="result-score" id="h-res-score">0/12</div>
+      <div class="result-pct" id="h-res-pct">Session Complete</div>
+      <div class="breakdown" id="h-breakdown"></div>
+      <button class="restart-btn" onclick="restartHerbs()">Study Again ↺</button>
+    </div>
+  </div>
+
+  <!-- ============ NUTRIENTS PANEL ============ -->
+  <div class="panel" id="panel-nutrients">
+    <div class="section-title" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;color:var(--white);margin-bottom:.2rem;">Nutrients Quiz</div>
+    <div class="section-sub" style="font-size:.63rem;color:var(--muted);letter-spacing:.1em;margin-bottom:1.2rem;">Macronutrients · Micronutrients · Minerals</div>
+
+    <div class="nutrient-type-tabs">
+      <button class="nt-tab active" id="nt-all" onclick="setNutrientType('all')">All</button>
+      <button class="nt-tab" id="nt-macro" onclick="setNutrientType('macro')">Macros</button>
+      <button class="nt-tab" id="nt-vitamin" onclick="setNutrientType('vitamin')">Vitamins</button>
+      <button class="nt-tab" id="nt-mineral" onclick="setNutrientType('mineral')">Minerals</button>
+    </div>
+
+    <div id="n-splash">
+      <div class="splash" style="padding:1rem 0;">
+        <span class="splash-icon">⚗️</span>
+        <h2>Nutrients & Minerals</h2>
+        <p>Quiz yourself on macronutrients, vitamins, and minerals — deficiency signs, functions, food sources, and RDAs.</p>
+        <button class="start-btn" onclick="startNutrientQuiz()">Start Quiz →</button>
+      </div>
+    </div>
+
+    <div id="n-quiz-ui" style="display:none;">
+      <div class="stats-bar">
+        <div class="stat"><div class="stat-val" id="n-score">0</div><div class="stat-label">Score</div></div>
+        <div class="stat"><div class="stat-val green" id="n-streak">0</div><div class="stat-label">Streak</div></div>
+        <div class="stat"><div class="stat-val" id="n-progress">0/10</div><div class="stat-label">Progress</div></div>
+        <div class="stat"><div class="stat-val" id="n-accuracy">—</div><div class="stat-label">Accuracy</div></div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="n-progress-fill" style="width:0%"></div></div>
+
+      <div class="q-card" id="n-card">
+        <div class="q-pill" id="n-pill">Nutrient</div>
+        <div class="q-num" id="n-qnum">Question 1</div>
+        <div class="q-text" id="n-qtext">Loading...</div>
+        <div class="q-sub" id="n-qsub"></div>
+        <div class="nq-answer-row" id="n-options"></div>
+      </div>
+
+      <div class="feedback" id="n-feedback">
+        <div class="fb-title" id="n-fb-title"></div>
+        <div class="fb-body" id="n-fb-body"></div>
+      </div>
+      <button class="next-btn" id="n-next-btn" onclick="nextNutrientQ()">Next →</button>
+    </div>
+
+    <div class="result-screen" id="n-result">
+      <div class="result-emoji" id="n-res-emoji">⚗️</div>
+      <div class="result-score" id="n-res-score">0/10</div>
+      <div class="result-pct" id="n-res-pct">Session Complete</div>
+      <div class="breakdown" id="n-breakdown"></div>
+      <button class="restart-btn" onclick="restartNutrients()">Study Again ↺</button>
+    </div>
+  </div>
+
+  <!-- ============ REFERENCE PANEL ============ -->
+  <div class="panel" id="panel-reference">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;color:var(--white);margin-bottom:.2rem;">Reference</div>
+    <div style="font-size:.63rem;color:var(--muted);letter-spacing:.1em;margin-bottom:1rem;">Tap any herb to expand</div>
+    <input class="ref-search" id="ref-search" placeholder="Search herbs, actions, systems..." oninput="filterRef(this.value)">
+    <div class="ref-grid" id="ref-grid"></div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// =====================================================
+// HERB DATABASE (100 herbs)
+// =====================================================
+const HERBS = [
+{name:"Yarrow",latin:"Achillea millefolium",actions:["diaphoretic","hemostatic","bitter tonic","antimicrobial","vulnerary"],primary:"diaphoretic",system:"circulatory",notes:"Fever management and wound healing herb. Opens pores to induce sweating, stops bleeding externally, bitter digestive tonic."},
+{name:"Horse Chestnut",latin:"Aesculus hippocastanum",actions:["venotonic","anti-inflammatory","astringent","antioedematous"],primary:"venotonic",system:"circulatory",notes:"Strengthens venous walls and capillaries. Used for varicose veins, haemorrhoids, and venous insufficiency."},
+{name:"Agrimony",latin:"Agrimonia eupatoria",actions:["astringent","bitter tonic","hepatic","vulnerary","diuretic"],primary:"astringent",system:"digestive",notes:"Gentle astringent for diarrhoea, sore throats, and urinary issues. Mild liver and gallbladder support."},
+{name:"Couch Grass",latin:"Agropyron repens",actions:["diuretic","demulcent","antimicrobial","soothing"],primary:"diuretic",system:"urinary",notes:"Soothing diuretic for urinary tract infections and kidney stones. Soothes irritated mucous membranes."},
+{name:"Albizia",latin:"Albizia lebbeck",actions:["antiallergic","adaptogen","nervine","immunomodulator"],primary:"antiallergic",system:"immune",notes:"Ayurvedic herb for allergies, asthma, and skin conditions. Stabilises mast cells and modulates immune response."},
+{name:"Lady's Mantle",latin:"Alchemilla vulgaris",actions:["astringent","vulnerary","emmenagogue","anti-inflammatory"],primary:"astringent",system:"reproductive",notes:"Women's herb for heavy menstruation and uterine prolapse. Tightens tissues and reduces inflammation."},
+{name:"Marshmallow",latin:"Althaea officinalis",actions:["demulcent","vulnerary","anti-inflammatory","expectorant","emollient"],primary:"demulcent",system:"mucous membranes",notes:"Soothes and coats irritated mucous membranes throughout the digestive, urinary, and respiratory tracts."},
+{name:"Andrographis",latin:"Andrographis paniculata",actions:["antimicrobial","immunostimulant","bitter tonic","anti-inflammatory","hepatoprotective"],primary:"antimicrobial",system:"immune",notes:"King of Bitters. Powerful immune activator for acute infections. Reduces duration of colds and flu."},
+{name:"Dong Quai",latin:"Angelica sinensis",actions:["emmenagogue","blood tonic","antispasmodic","analgesic","hepatic"],primary:"emmenagogue",system:"reproductive",notes:"Premier Chinese blood tonic for women. Regulates menstruation, relieves cramps, builds blood after loss."},
+{name:"Celery Seed",latin:"Apium graveolens",actions:["diuretic","anti-inflammatory","carminative","nervine","urinary antiseptic"],primary:"diuretic",system:"urinary",notes:"Used for gout, arthritis, and urinary tract infections. Reduces uric acid and promotes urination."},
+{name:"Burdock",latin:"Arctium lappa",actions:["alterative","diuretic","bitter tonic","lymphatic","hepatic"],primary:"alterative",system:"lymphatic",notes:"Deep blood and lymph cleanser for chronic skin conditions like eczema and psoriasis. Supports liver detoxification."},
+{name:"Uva Ursi",latin:"Arctostaphylos uva-ursi",actions:["urinary antiseptic","astringent","diuretic","anti-inflammatory"],primary:"urinary antiseptic",system:"urinary",notes:"Specific for urinary tract infections, especially cystitis. Requires alkaline urine for arbutin activation."},
+{name:"Arnica",latin:"Arnica montana",actions:["anti-inflammatory","vulnerary","analgesic","circulatory stimulant"],primary:"anti-inflammatory",system:"musculoskeletal",notes:"External use only for bruising, sprains, and muscle pain. Stimulates local circulation and reduces inflammation."},
+{name:"Wormwood",latin:"Artemisia absinthium",actions:["bitter tonic","anthelmintic","antimicrobial","cholagogue","carminative"],primary:"bitter tonic",system:"digestive",notes:"Intensely bitter digestive tonic. Expels intestinal parasites and stimulates bile secretion. Contains thujone — use cautiously."},
+{name:"Sweet Annie",latin:"Artemisia annua",actions:["antiparasitic","antimalarial","antiviral","immunomodulator"],primary:"antiparasitic",system:"immune",notes:"Source of artemisinin for malaria treatment. Also studied for viral and autoimmune conditions."},
+{name:"Pleurisy Root",latin:"Asclepias tuberosa",actions:["expectorant","diaphoretic","antispasmodic","anti-inflammatory"],primary:"expectorant",system:"respiratory",notes:"Specific for pleurisy and dry, painful respiratory conditions. Relaxes bronchial spasm and promotes expectoration."},
+{name:"Shatavari",latin:"Asparagus racemosus",actions:["adaptogen","galactagogue","demulcent","reproductive tonic","immunomodulator"],primary:"reproductive tonic",system:"reproductive",notes:"Ayurvedic premier women's tonic. Supports hormonal balance, lactation, fertility, and menopausal transition."},
+{name:"Astragalus",latin:"Astragalus membranaceus",actions:["immunomodulator","adaptogen","cardiotonic","anti-inflammatory","tonifying"],primary:"immunomodulator",system:"immune",notes:"Foundational TCM immune tonic. Builds deep immune resistance. Best used long term rather than acutely."},
+{name:"Oat Straw",latin:"Avena sativa",actions:["nervine tonic","nutritive","demulcent","antidepressant"],primary:"nervine tonic",system:"nervous",notes:"Nourishes and restores depleted nervous system. Excellent for burnout, nervous exhaustion, and anxiety."},
+{name:"Bacopa",latin:"Bacopa monnieri",actions:["cognitive tonic","adaptogen","nervine","anxiolytic","antioxidant"],primary:"cognitive tonic",system:"nervous",notes:"Ayurvedic brain herb. Improves memory, learning, and concentration. Benefits accumulate over 4–12 weeks."},
+{name:"Buchu",latin:"Barosma betulina",actions:["urinary antiseptic","diuretic","anti-inflammatory","carminative"],primary:"urinary antiseptic",system:"urinary",notes:"South African herb specific for urinary tract infections and cystitis. Volatile oils provide antimicrobial action."},
+{name:"Oregon Grape",latin:"Berberis aquifolium",actions:["antimicrobial","bitter tonic","hepatic","alterative","cholagogue"],primary:"antimicrobial",system:"hepatic",notes:"Berberine-rich liver and skin herb. Clears heat and infection from gut, skin, and liver."},
+{name:"Barberry",latin:"Berberis vulgaris",actions:["antimicrobial","bitter tonic","hepatic","cholagogue","alterative"],primary:"bitter tonic",system:"hepatic",notes:"Berberine-containing digestive and liver herb. Strongly antimicrobial, stimulates bile flow."},
+{name:"Boswellia",latin:"Boswellia serrata",actions:["anti-inflammatory","analgesic","immunomodulator","expectorant"],primary:"anti-inflammatory",system:"musculoskeletal",notes:"Frankincense resin. Potent anti-inflammatory via 5-LOX inhibition. Excellent for arthritis and inflammatory bowel disease."},
+{name:"Bupleurum",latin:"Bupleurum falcatum",actions:["hepatoprotective","anti-inflammatory","adaptogen","immunomodulator","nervine"],primary:"hepatoprotective",system:"hepatic",notes:"TCM liver herb. Moves stuck liver qi, reduces inflammation, and harmonises the digestive and nervous systems."},
+{name:"Calendula",latin:"Calendula officinalis",actions:["vulnerary","anti-inflammatory","antimicrobial","lymphatic","antifungal"],primary:"vulnerary",system:"skin",notes:"Heals wounds, skin inflammation, and mucous membranes. Lymphatic and gentle antifungal. Safe for all ages."},
+{name:"Shepherd's Purse",latin:"Capsella bursa-pastoris",actions:["hemostatic","astringent","diuretic","hypotensive","uterine tonic"],primary:"hemostatic",system:"circulatory",notes:"Stops bleeding — uterine, nasal, and urinary. Tones the uterus and mildly lowers blood pressure."},
+{name:"Cayenne",latin:"Capsicum minimum",actions:["circulatory stimulant","analgesic","carminative","diaphoretic","rubefacient"],primary:"circulatory stimulant",system:"circulatory",notes:"Powerful peripheral vasodilator and warming herb. Topically depletes substance P for nerve pain relief."},
+{name:"Blue Cohosh",latin:"Caulophyllum thalictroides",actions:["emmenagogue","antispasmodic","uterine tonic","analgesic"],primary:"emmenagogue",system:"reproductive",notes:"Strong uterine stimulant. Used for delayed labour and menstrual irregularity. Contraindicated in pregnancy."},
+{name:"Black Cohosh",latin:"Cimicifuga racemosa",actions:["phytoestrogenic","antispasmodic","anti-inflammatory","nervine","analgesic"],primary:"phytoestrogenic",system:"reproductive",notes:"Key herb for menopausal symptoms, especially hot flushes. Also relieves muscular and neuralgic pain."},
+{name:"Cinnamon",latin:"Cinnamomum verum",actions:["carminative","antispasmodic","antimicrobial","blood sugar regulator","astringent"],primary:"carminative",system:"digestive",notes:"Warming digestive herb. Regulates blood sugar via insulin sensitisation. Antimicrobial against many pathogens."},
+{name:"Codonopsis",latin:"Codonopsis pilosula",actions:["adaptogen","immunomodulator","tonifying","digestive tonic","blood tonic"],primary:"adaptogen",system:"immune",notes:"The poor man's ginseng. Gentler qi tonic for chronic fatigue, poor appetite, and immune deficiency."},
+{name:"Coleus",latin:"Coleus forskohlii",actions:["bronchodilator","hypotensive","anti-inflammatory","cardiotonic"],primary:"bronchodilator",system:"respiratory",notes:"Contains forskolin, a potent cAMP activator. Opens airways in asthma, lowers blood pressure, strengthens heart."},
+{name:"Myrrh",latin:"Commiphora myrrha",actions:["antimicrobial","astringent","vulnerary","expectorant","analgesic"],primary:"antimicrobial",system:"immune",notes:"Ancient resin for mouth, throat, and wound infections. Strong antimicrobial and wound healer."},
+{name:"Lily of the Valley",latin:"Convallaria majalis",actions:["cardiotonic","diuretic","cardiac glycoside"],primary:"cardiotonic",system:"cardiovascular",notes:"Contains cardiac glycosides similar to digoxin. Strengthens weak heart contractions. Medical supervision required."},
+{name:"Corydalis",latin:"Corydalis yanhusuo",actions:["analgesic","antispasmodic","nervine sedative","hepatic"],primary:"analgesic",system:"nervous",notes:"Potent natural analgesic from TCM. Contains tetrahydropalmatine which works on dopamine and GABA receptors."},
+{name:"Hawthorn Flower",latin:"Crataegus oxyacantha flos",actions:["cardiotonic","hypotensive","antioxidant","nervine","vasodilator"],primary:"cardiotonic",system:"cardiovascular",notes:"Hawthorn flowers are gentler and more relaxing than berries. Used for anxiety with cardiac symptoms."},
+{name:"Hawthorn Berry",latin:"Crataegus oxycanthoi fructus",actions:["cardiotonic","antioxidant","hypotensive","vasodilator","astringent"],primary:"cardiotonic",system:"cardiovascular",notes:"Rich in oligomeric proanthocyanidins. Improves coronary blood flow and strengthens cardiac muscle over time."},
+{name:"Varuna",latin:"Crataeva magna",actions:["diuretic","lithotriptic","anti-inflammatory","urinary tonic"],primary:"lithotriptic",system:"urinary",notes:"Ayurvedic herb that breaks down kidney and bladder stones. Tones the urinary tract."},
+{name:"Turmeric",latin:"Curcuma longa",actions:["anti-inflammatory","cholagogue","antioxidant","hepatoprotective","antimicrobial"],primary:"anti-inflammatory",system:"systemic",notes:"Potent systemic anti-inflammatory via COX-2 and NF-κB inhibition. Requires fat and piperine for absorption."},
+{name:"Globe Artichoke",latin:"Cynara scolymus",actions:["cholagogue","hepatoprotective","hypocholesterolaemic","bitter tonic","diuretic"],primary:"cholagogue",system:"hepatic",notes:"Stimulates bile production and flow. Reduces cholesterol, protects and regenerates liver cells."},
+{name:"Wild Yam",latin:"Dioscorea villosa",actions:["antispasmodic","anti-inflammatory","hepatic","progesterogenic","carminative"],primary:"antispasmodic",system:"reproductive",notes:"Relieves intestinal and uterine cramps. Precursor pathways suggest hormonal activity though not directly converted in body."},
+{name:"Echinacea (root)",latin:"Echinacea angustifolia",actions:["immunomodulator","antimicrobial","lymphatic","anti-inflammatory","vulnerary"],primary:"immunomodulator",system:"immune",notes:"Root preparation is more concentrated. Stimulates innate immunity — phagocytosis, NK cells, and macrophage activity."},
+{name:"Echinacea (aerial)",latin:"Echinacea purpurea",actions:["immunomodulator","antiviral","lymphatic","anti-inflammatory"],primary:"immunomodulator",system:"immune",notes:"Aerial parts contain polysaccharides for immune activation. Use at first sign of illness for best effect."},
+{name:"Siberian Ginseng",latin:"Eleutherococcus senticosus",actions:["adaptogen","immunomodulator","cognitive tonic","antifatigue","cardiotonic"],primary:"adaptogen",system:"nervous",notes:"Eleutherosides support stress resilience and mental clarity. Safer than Panax ginseng for daily long-term use."},
+{name:"Horsetail",latin:"Equisetum arvense",actions:["diuretic","astringent","connective tissue tonic","hemostatic","nutritive"],primary:"connective tissue tonic",system:"urinary",notes:"Highest plant source of silica. Strengthens connective tissue — nails, hair, bones, cartilage."},
+{name:"California Poppy",latin:"Eschscholtzia californica",actions:["nervine sedative","analgesic","antispasmodic","anxiolytic"],primary:"nervine sedative",system:"nervous",notes:"Gentle, non-addictive sedative for anxiety and insomnia. Safe for children. Distant relative of opium poppy."},
+{name:"Eyebright",latin:"Euphrasia officinalis",actions:["astringent","anti-inflammatory","antimicrobial","anticatarrhal"],primary:"astringent",system:"respiratory",notes:"Specific for eye inflammation, conjunctivitis, and hay fever. Reduces mucous secretions in upper respiratory tract."},
+{name:"Meadowsweet",latin:"Filipendula ulmaria",actions:["antacid","anti-inflammatory","vulnerary","astringent","diuretic"],primary:"antacid",system:"digestive",notes:"Natural source of salicylates. Protects and soothes stomach lining — unlike aspirin it doesn't cause ulcers."},
+{name:"Fennel",latin:"Foeniculum vulgare",actions:["carminative","antispasmodic","galactagogue","expectorant","phytoestrogenic"],primary:"carminative",system:"digestive",notes:"Classic digestive carminative for gas, bloating, and colic. Also promotes milk production in nursing mothers."},
+{name:"Bladderwrack",latin:"Fucus vesiculosus",actions:["thyroid tonic","nutritive","anti-inflammatory","demulcent","antirheumatic"],primary:"thyroid tonic",system:"endocrine",notes:"Rich in iodine for hypothyroid conditions. Also provides alginates that soothe GI inflammation."},
+{name:"Cleavers",latin:"Galium aparine",actions:["lymphatic","diuretic","alterative","anti-inflammatory","vulnerary"],primary:"lymphatic",system:"lymphatic",notes:"Spring tonic and lymph mover. Used for swollen glands, skin conditions, and urinary tract infections."},
+{name:"Reishi",latin:"Ganoderma lucidum",actions:["adaptogen","immunomodulator","hepatoprotective","cardiotonic","antitumour"],primary:"adaptogen",system:"immune",notes:"Spirit mushroom of TCM. Deep immune modulator for chronic conditions, cancer support, and longevity."},
+{name:"Gentian",latin:"Gentiana lutea",actions:["bitter tonic","cholagogue","carminative","digestive stimulant"],primary:"bitter tonic",system:"digestive",notes:"One of the most intensely bitter herbs. Strongly stimulates all digestive secretions — HCl, bile, enzymes."},
+{name:"Ginkgo",latin:"Ginkgo biloba",actions:["cognitive tonic","vasodilator","antioxidant","anti-inflammatory","platelet inhibitor"],primary:"cognitive tonic",system:"nervous",notes:"Improves peripheral and cerebral circulation. Protective against neurodegeneration and useful for tinnitus, vertigo."},
+{name:"Ground Ivy",latin:"Glechoma hederacea",actions:["anticatarrhal","astringent","expectorant","anti-inflammatory","tonic"],primary:"anticatarrhal",system:"respiratory",notes:"Clears catarrh from the upper respiratory tract and sinuses. Helpful for glue ear in children."},
+{name:"Licorice",latin:"Glycyrrhiza glabra",actions:["demulcent","adrenal tonic","expectorant","anti-inflammatory","hepatoprotective"],primary:"demulcent",system:"endocrine",notes:"Harmonising adaptogen. Soothes GI mucosa, supports adrenal function, and modifies other herbs' actions."},
+{name:"Grindelia",latin:"Grindelia camporum",actions:["expectorant","antispasmodic","antimicrobial","vulnerary"],primary:"expectorant",system:"respiratory",notes:"Thick, resinous expectorant for bronchitis with difficult-to-expectorate mucus. Also used topically for poison ivy."},
+{name:"Gymnema",latin:"Gymnema sylvestre",actions:["hypoglycaemic","pancreatic tonic","anti-inflammatory","digestive"],primary:"hypoglycaemic",system:"endocrine",notes:"Gymnemic acids block sugar receptors on the tongue and GI tract. Supports blood sugar control in type 2 diabetes."},
+{name:"Devil's Claw",latin:"Harpagophytum procumbens",actions:["anti-inflammatory","analgesic","bitter tonic","antirheumatic"],primary:"anti-inflammatory",system:"musculoskeletal",notes:"African herb for arthritis and back pain. Harpagosides inhibit prostaglandin synthesis. Comparable to NSAIDs in trials."},
+{name:"Hops",latin:"Humulus lupulus",actions:["nervine sedative","bitter tonic","hypnotic","antispasmodic","anaphrodisiac"],primary:"nervine sedative",system:"nervous",notes:"Promotes sleep and relaxes nervous tension. Bitter stimulates digestion. Strongly sedating — use at night."},
+{name:"Goldenseal",latin:"Hydrastis canadensis",actions:["antimicrobial","bitter tonic","astringent","immunostimulant","cholagogue"],primary:"antimicrobial",system:"immune",notes:"Broad-spectrum antimicrobial via berberine. Tones mucous membranes throughout the body. Endangered — use responsibly."},
+{name:"Gotu Kola",latin:"Centella asiatica",actions:["nervine tonic","connective tissue tonic","vulnerary","cognitive tonic","adaptogen"],primary:"connective tissue tonic",system:"nervous",notes:"Wound healer and brain tonic. Triterpenoids stimulate collagen synthesis and improve venous insufficiency."},
+{name:"St John's Wort",latin:"Hypericum perforatum",actions:["antidepressant","nervine","anti-inflammatory","antimicrobial","vulnerary"],primary:"antidepressant",system:"nervous",notes:"Well-evidenced for mild–moderate depression. Hypericin and hyperforin modulate serotonin, dopamine, GABA."},
+{name:"Hyssop",latin:"Hyssopus officinalis",actions:["expectorant","antispasmodic","antimicrobial","diaphoretic","carminative"],primary:"expectorant",system:"respiratory",notes:"Clears thick mucus from the lungs. Antispasmodic for coughs and asthma. Gently diaphoretic in fevers."},
+{name:"Elecampane",latin:"Inula helenium",actions:["expectorant","antimicrobial","bitter tonic","antispasmodic","carminative"],primary:"expectorant",system:"respiratory",notes:"Deep respiratory herb for chronic, wet coughs. Strongly antimicrobial against respiratory pathogens including TB."},
+{name:"Lavender",latin:"Lavandula angustifolia",actions:["nervine","carminative","antispasmodic","antimicrobial","analgesic"],primary:"nervine",system:"nervous",notes:"Calming aromatic for anxiety, tension headaches, and mild insomnia. Anti-inflammatory topically for burns."},
+{name:"Motherwort",latin:"Leonurus cardiaca",actions:["emmenagogue","cardiotonic","nervine","antispasmodic","hypotensive"],primary:"emmenagogue",system:"reproductive",notes:"Regulates menstruation and calms palpitations. Specifically for anxiety with cardiac involvement."},
+{name:"Lobelia",latin:"Lobelia inflata",actions:["antispasmodic","expectorant","bronchodilator","nervine","emetic"],primary:"antispasmodic",system:"respiratory",notes:"Powerful respiratory antispasmodic for asthma. Lobeline mimics nicotine — used for smoking cessation. Low dose specific."},
+{name:"Goji Berry",latin:"Lycium barbarum",actions:["nutritive","adaptogen","antioxidant","immunomodulator","hepatoprotective"],primary:"nutritive",system:"immune",notes:"Rich in zeaxanthin for eye health. TCM blood and yin tonic. Hepatoprotective and immune modulating."},
+{name:"White Horehound",latin:"Marrubium vulgare",actions:["expectorant","bitter tonic","antispasmodic","hepatic","diaphoretic"],primary:"expectorant",system:"respiratory",notes:"Traditional cough remedy. Marrubiin stimulates mucus secretion and expectoration. Bitter digestive tonic."},
+{name:"Chamomile",latin:"Matricaria chamomilla",actions:["carminative","antispasmodic","nervine","anti-inflammatory","vulnerary"],primary:"carminative",system:"digestive",notes:"Universal gentle herb. Relieves tension colic, IBS, and nervous indigestion. Safe for infants and elderly."},
+{name:"Lemon Balm",latin:"Melissa officinalis",actions:["nervine","carminative","antiviral","anxiolytic","cognitive tonic"],primary:"nervine",system:"nervous",notes:"Calms anxiety and nervous indigestion. Antiviral especially against Herpes simplex. Gently improves mood."},
+{name:"Peppermint",latin:"Mentha piperita",actions:["carminative","antispasmodic","analgesic","antimicrobial","diaphoretic"],primary:"carminative",system:"digestive",notes:"Relaxes smooth muscle of GI tract. Enteric-coated capsules reduce IBS symptoms. Cooling diaphoretic for fevers."},
+{name:"Holy Basil",latin:"Ocimum sanctum",actions:["adaptogen","nervine","carminative","antimicrobial","immunomodulator"],primary:"adaptogen",system:"nervous",notes:"Tulsi — Ayurvedic sacred herb. Lifts mood, enhances cognitive function, and supports HPA axis regulation."},
+{name:"White Peony",latin:"Paeonia lactiflora",actions:["antispasmodic","anti-inflammatory","blood tonic","analgesic","nervine"],primary:"antispasmodic",system:"reproductive",notes:"TCM blood tonic and muscle relaxant. Used with liquorice for menstrual cramps and polycystic ovarian syndrome."},
+{name:"Panax Ginseng",latin:"Panax ginseng",actions:["adaptogen","cognitive tonic","immunomodulator","cardiotonic","aphrodisiac"],primary:"adaptogen",system:"nervous",notes:"King of tonics. Ginsenosides modulate HPA axis, improve cognition, and enhance physical performance."},
+{name:"Passionflower",latin:"Passiflora incarnata",actions:["nervine sedative","antispasmodic","anxiolytic","hypnotic","analgesic"],primary:"nervine sedative",system:"nervous",notes:"Excellent for anxiety with racing thoughts and insomnia. Modulates GABA — gentle and non-habit-forming."},
+{name:"Pelargonium",latin:"Pelargonium sidoides",actions:["antimicrobial","immunostimulant","expectorant","antiviral"],primary:"antimicrobial",system:"respiratory",notes:"South African root for acute bronchitis, sinusitis, and tonsillitis. Strong evidence from clinical trials."},
+{name:"Pokeweed",latin:"Phytolacca americana",actions:["lymphatic","anti-inflammatory","immunostimulant","emetic","cathartic"],primary:"lymphatic",system:"lymphatic",notes:"Powerful lymphagogue for severely enlarged lymph nodes. Highly toxic in large doses — professional use only."},
+{name:"Aniseed",latin:"Pimpinella anisum",actions:["carminative","expectorant","antispasmodic","galactagogue","antimicrobial"],primary:"carminative",system:"digestive",notes:"Sweet aromatic for bloating, flatulence, and coughs. Promotes lactation and has mild oestrogenic activity."},
+{name:"Jamaica Dogwood",latin:"Piscidia erythrina",actions:["analgesic","antispasmodic","nervine sedative","anti-inflammatory"],primary:"analgesic",system:"nervous",notes:"Powerful pain reliever and muscle relaxant. Used for neuralgia, dysmenorrhoea, and insomnia from pain."},
+{name:"Plantain",latin:"Plantago major",actions:["demulcent","vulnerary","astringent","expectorant","anti-inflammatory"],primary:"demulcent",system:"respiratory",notes:"Drawing and healing herb for wounds, insect stings, and soothing irritated respiratory mucosa."},
+{name:"Propolis",latin:"Propolis",actions:["antimicrobial","antiviral","antifungal","anti-inflammatory","immunostimulant"],primary:"antimicrobial",system:"immune",notes:"Bee resin with broad-spectrum antimicrobial activity. Effective for mouth, throat, and wound infections."},
+{name:"Rehmannia",latin:"Rehmannia glutinosa",actions:["yin tonic","adrenal tonic","anti-inflammatory","blood tonic","immunomodulator"],primary:"yin tonic",system:"endocrine",notes:"Chinese kidney and adrenal tonic. Nourishes deep yin deficiency — dryness, night sweats, adrenal exhaustion."},
+{name:"Rhubarb Root",latin:"Rheum palmatum",actions:["laxative","bitter tonic","astringent","hepatic","antimicrobial"],primary:"laxative",system:"digestive",notes:"Dual action — low dose astringent and bitter tonic; higher dose stimulating laxative via anthraquinones."},
+{name:"Rhodiola",latin:"Rhodiola rosea",actions:["adaptogen","nervine stimulant","antidepressant","cognitive tonic","antifatigue"],primary:"adaptogen",system:"nervous",notes:"Arctic root for mental stamina, physical endurance, and stress resilience. Anti-burnout herb."},
+{name:"Rose",latin:"Rosa damascena",actions:["nervine","astringent","carminative","antidepressant","vulnerary"],primary:"nervine",system:"nervous",notes:"Heart herb. Gently lifts grief and depression, cools inflammation, and astringes excess mucous secretions."},
+{name:"Rosemary",latin:"Rosmarinus officinalis",actions:["circulatory stimulant","cognitive tonic","carminative","antimicrobial","antioxidant"],primary:"circulatory stimulant",system:"circulatory",notes:"Improves peripheral circulation and cerebral blood flow. Memory herb — also antimicrobial and preservative."},
+{name:"Raspberry Leaf",latin:"Rubus idaeus",actions:["uterine tonic","astringent","nutritive","anti-inflammatory"],primary:"uterine tonic",system:"reproductive",notes:"Tones and prepares uterus for birth. Rich in minerals. Astringent for diarrhoea and sore throats."},
+{name:"Yellow Dock",latin:"Rumex crispus",actions:["alterative","hepatic","laxative","nutritive","bitter tonic"],primary:"alterative",system:"hepatic",notes:"Iron-rich blood cleanser for anaemia and chronic skin disease. Stimulates bile and bowel motility."},
+{name:"Butcher's Broom",latin:"Ruscus aculeatus",actions:["venotonic","anti-inflammatory","diuretic","vasoconstrictive"],primary:"venotonic",system:"circulatory",notes:"Tones and tightens venous walls. Used for haemorrhoids, varicose veins, and orthostatic hypotension."},
+{name:"White Willow",latin:"Salix alba",actions:["analgesic","anti-inflammatory","antipyretic","astringent"],primary:"analgesic",system:"musculoskeletal",notes:"Natural source of salicin, the precursor to aspirin. Effective for pain and fever without GI side effects."},
+{name:"Dan Shen",latin:"Salvia miltiorrhiza",actions:["cardiotonic","vasodilator","blood mover","anti-inflammatory","hepatoprotective"],primary:"cardiotonic",system:"cardiovascular",notes:"Moves blood stasis in TCM. Improves coronary and cerebral circulation. Hepatoprotective and anti-fibrotic."},
+{name:"Sage",latin:"Salvia officinalis",actions:["astringent","antimicrobial","oestrogenic","carminative","cognitive tonic"],primary:"astringent",system:"digestive",notes:"Dries excess secretions — night sweats, hot flushes, excessive salivation. Anticholinesterase activity benefits memory."},
+{name:"Elderberry",latin:"Sambucus nigra",actions:["antiviral","immunomodulator","diaphoretic","nutritive","anti-inflammatory"],primary:"antiviral",system:"immune",notes:"Inhibits viral replication and shortens flu duration. Rich in anthocyanins and vitamin C."},
+{name:"Elder Flower",latin:"Sambucus nigra flos",actions:["diaphoretic","anticatarrhal","anti-inflammatory","diuretic","antiviral"],primary:"diaphoretic",system:"respiratory",notes:"Opens pores for fever management. Clears catarrh from sinuses and upper respiratory tract."},
+{name:"Schisandra",latin:"Schisandra chinensis",actions:["adaptogen","hepatoprotective","cognitive tonic","immunomodulator","astringent"],primary:"adaptogen",system:"hepatic",notes:"Five-flavour fruit. Protects liver, sharpens senses, builds endurance. The only herb touching all five tastes."},
+{name:"Figwort",latin:"Scrophularia nodosa",actions:["lymphatic","alterative","anti-inflammatory","diuretic","laxative"],primary:"lymphatic",system:"lymphatic",notes:"Skin and lymph herb for chronic eczema, psoriasis, and enlarged lymph nodes. Moves stagnation."},
+{name:"Baical Skullcap",latin:"Scutellaria baicalensis",actions:["anti-inflammatory","antiviral","antimicrobial","hepatoprotective","anxiolytic"],primary:"anti-inflammatory",system:"immune",notes:"Chinese skullcap with baicalin — potent anti-inflammatory and broad antiviral activity."},
+{name:"Skullcap",latin:"Scutellaria lateriflora",actions:["nervine tonic","antispasmodic","anxiolytic","hypnotic"],primary:"nervine tonic",system:"nervous",notes:"Restores and nourishes an exhausted nervous system. Reduces anxiety without heavy sedation."},
+{name:"Saw Palmetto",latin:"Serenoa repens",actions:["antiandrogenic","anti-inflammatory","nutritive","urinary tonic"],primary:"antiandrogenic",system:"reproductive",notes:"Inhibits 5-alpha reductase. Reduces benign prostatic hyperplasia and supports male hormonal balance."},
+{name:"Milk Thistle",latin:"Silybum marianum",actions:["hepatoprotective","antioxidant","anti-inflammatory","cholagogue","nutritive"],primary:"hepatoprotective",system:"hepatic",notes:"Silymarin prevents hepatotoxin entry into liver cells and stimulates regeneration. The definitive liver herb."},
+{name:"Sarsaparilla",latin:"Smilax ornata",actions:["alterative","anti-inflammatory","diuretic","hormone balancer","antimicrobial"],primary:"alterative",system:"lymphatic",notes:"Blood purifier for skin conditions, gout, and rheumatism. Saponins may bind gut endotoxins."},
+{name:"Goldenrod",latin:"Solidago canadensis",actions:["diuretic","anti-inflammatory","antimicrobial","astringent","anticatarrhal"],primary:"diuretic",system:"urinary",notes:"Urinary antiseptic and anti-inflammatory for cystitis, urolithiasis, and upper respiratory catarrh."},
+{name:"Wood Betony",latin:"Stachys betonica",actions:["nervine tonic","digestive tonic","analgesic","hepatic","anxiolytic"],primary:"nervine tonic",system:"nervous",notes:"Grounding herb for anxiety with digestive symptoms. Relieves tension headaches and poor digestion from stress."},
+{name:"Chickweed",latin:"Stellaria media",actions:["demulcent","anti-inflammatory","nutritive","vulnerary","antipruritic"],primary:"demulcent",system:"skin",notes:"Cooling and soothing for itchy skin conditions — eczema, psoriasis, hives. Rich in vitamins and minerals."},
+{name:"Feverfew",latin:"Tanacetum parthenium",actions:["anti-inflammatory","antispasmodic","emmenagogue","analgesic","platelet inhibitor"],primary:"anti-inflammatory",system:"nervous",notes:"Parthenolide inhibits platelet aggregation and prostaglandins. Reduces frequency and severity of migraines."},
+{name:"Dandelion Leaf",latin:"Taraxacum officinale folia",actions:["diuretic","nutritive","bitter tonic","hepatic","cholagogue"],primary:"diuretic",system:"urinary",notes:"Potassium-sparing diuretic — replaces what it removes. Rich in iron, calcium, and vitamins A and C."},
+{name:"Dandelion Root",latin:"Taraxacum officinale radix",actions:["bitter tonic","hepatic","cholagogue","diuretic","prebiotic"],primary:"bitter tonic",system:"hepatic",notes:"Stimulates bile flow, supports liver and gallbladder, and acts as a prebiotic via inulin content."},
+{name:"Cacao",latin:"Theobroma cacao",actions:["cardiovascular tonic","antioxidant","nervine stimulant","antidepressant","nutritive"],primary:"antioxidant",system:"cardiovascular",notes:"Rich in flavanols that improve endothelial function and blood flow. Contains theobromine and anandamide."},
+{name:"Thuja",latin:"Thuja occidentalis",actions:["immunostimulant","antiviral","antimicrobial","expectorant","diuretic"],primary:"antiviral",system:"immune",notes:"Used for warts, papillomas, and recurrent viral infections. Powerful — avoid in pregnancy and with prolonged use."},
+{name:"Thyme",latin:"Thymus vulgaris",actions:["expectorant","antimicrobial","antispasmodic","carminative","antifungal"],primary:"expectorant",system:"respiratory",notes:"Rich in thymol — potent antimicrobial expectorant for bronchitis, pertussis, and productive coughs."},
+{name:"Linden",latin:"Tilia europaea",actions:["nervine","diaphoretic","antispasmodic","hypotensive","anticatarrhal"],primary:"nervine",system:"nervous",notes:"Gentle calming herb for anxiety-related hypertension, nervous palpitations, and colds with fever."},
+{name:"Tribulus",latin:"Tribulus terrestris",actions:["androgenic","aphrodisiac","diuretic","anti-inflammatory","cardiotonic"],primary:"androgenic",system:"reproductive",notes:"Raises LH levels to stimulate testosterone production. Used for low libido, infertility, and urinary stones."},
+{name:"Red Clover",latin:"Trifolium pratense",actions:["phytoestrogenic","alterative","expectorant","lymphatic","antispasmodic"],primary:"phytoestrogenic",system:"reproductive",notes:"Rich in isoflavones. Used for menopausal symptoms, hormone-sensitive cancers (protective), and skin conditions."},
+{name:"Fenugreek",latin:"Trigonella foenum-graecum",actions:["galactagogue","hypoglycaemic","demulcent","nutritive","bitter tonic"],primary:"galactagogue",system:"reproductive",notes:"Strongly promotes breast milk production. Slows glucose absorption and improves insulin sensitivity."},
+{name:"Damiana",latin:"Turnera diffusa",actions:["aphrodisiac","nervine tonic","antidepressant","urinary tonic","anxiolytic"],primary:"aphrodisiac",system:"reproductive",notes:"Gently stimulating tonic for low libido, depression, and nervous exhaustion — especially in men."},
+{name:"Nettle",latin:"Urtica dioica",actions:["nutritive","anti-inflammatory","diuretic","astringent","antiallergic"],primary:"nutritive",system:"nutritive",notes:"Iron-rich, mineral-dense nutritive tonic. Also reduces histamine response in seasonal allergies."},
+{name:"Bilberry",latin:"Vaccinium myrtillus",actions:["antioxidant","vasotonic","anti-inflammatory","astringent","hypoglycaemic"],primary:"antioxidant",system:"cardiovascular",notes:"Rich in anthocyanins for eye health, night vision, and capillary integrity. Anti-inflammatory and astringent."},
+{name:"Valerian",latin:"Valeriana officinalis",actions:["nervine sedative","antispasmodic","hypnotic","anxiolytic","analgesic"],primary:"nervine sedative",system:"nervous",notes:"Strong sedative nervine for insomnia and anxiety. Works on GABA receptors. Malodorous but effective."},
+{name:"Mullein",latin:"Verbascum thapsus",actions:["expectorant","demulcent","antispasmodic","lymphatic","anti-inflammatory"],primary:"expectorant",system:"respiratory",notes:"Soothes and moistens inflamed respiratory passages, helps expel mucus. Also used as an ear oil."},
+{name:"Vervain",latin:"Verbena officinalis",actions:["nervine tonic","antispasmodic","hepatic","diaphoretic","antidepressant"],primary:"nervine tonic",system:"nervous",notes:"For perfectionists under tension — type-A stress with muscle tightness. Liver mover and nervous system restorative."},
+{name:"Cramp Bark",latin:"Viburnum opulus",actions:["antispasmodic","nervine","hypotensive","astringent","sedative"],primary:"antispasmodic",system:"musculoskeletal",notes:"Potent muscle antispasmodic for uterine cramps, back spasms, and colic. Mildly sedating."},
+{name:"Viola",latin:"Viola tricolor",actions:["alterative","demulcent","anti-inflammatory","expectorant","diuretic"],primary:"alterative",system:"skin",notes:"Heartease for chronic skin conditions — eczema, cradle cap, and childhood skin diseases. Gentle and safe."},
+{name:"Chaste Tree",latin:"Vitex agnus-castus",actions:["progesterogenic","emmenagogue","dopaminergic","anti-inflammatory"],primary:"progesterogenic",system:"reproductive",notes:"Stimulates progesterone via dopamine agonism on pituitary. Key herb for PMS, irregular cycles, and fibroids."},
+{name:"Ashwagandha",latin:"Withania somnifera",actions:["adaptogen","nervine tonic","anti-inflammatory","immunomodulator","thyroid tonic"],primary:"adaptogen",system:"nervous",notes:"Premier Ayurvedic adaptogen for stress, fatigue, thyroid health, and low vitality. Builds ojas."},
+{name:"Prickly Ash",latin:"Zanthoxylum species",actions:["circulatory stimulant","analgesic","carminative","diaphoretic","antimicrobial"],primary:"circulatory stimulant",system:"circulatory",notes:"Moves stagnant circulation to the extremities. Used for Raynaud's, neuralgia, and rheumatic conditions."},
+{name:"Corn Silk",latin:"Zea mays",actions:["diuretic","demulcent","anti-inflammatory","soothing","urinary tonic"],primary:"diuretic",system:"urinary",notes:"Soothes and demulcifies the urinary tract. Used for cystitis, urethritis, and kidney inflammation."},
+{name:"Ginger",latin:"Zingiber officinale",actions:["carminative","anti-inflammatory","circulatory stimulant","antiemetic","antispasmodic"],primary:"carminative",system:"digestive",notes:"Warming digestive tonic that moves stagnation, relieves nausea, and warms peripheral circulation."},
+{name:"Jujube",latin:"Ziziphus jujuba",actions:["nervine sedative","adaptogen","nutritive","immunomodulator","digestive tonic"],primary:"nervine sedative",system:"nervous",notes:"TCM red date. Calming nutritive tonic for insomnia, anxiety, and digestive weakness. Rich in vitamin C."},
+{name:"Sour Jujube",latin:"Ziziphus spinosa",actions:["nervine sedative","hypnotic","anxiolytic","heart tonic"],primary:"nervine sedative",system:"nervous",notes:"The seed specifically calms the heart-mind in TCM. Used for insomnia with palpitations and night sweats."}
+];
+
+// =====================================================
+// NUTRIENTS DATABASE
+// =====================================================
+const NUTRIENTS = [
+// MACRONUTRIENTS
+{name:"Protein",type:"macro",function:"Builds and repairs tissues, makes enzymes, hormones, and antibodies. Essential for muscle, immune function, and all cellular processes.",sources:"Meat, fish, eggs, legumes, tofu, quinoa, dairy",deficiency:"Oedema, muscle wasting (kwashiorkor), impaired immunity, poor wound healing, growth failure",rda:"0.8g/kg body weight (adults); 1.2–2.0g/kg for athletes",toxicity:"High intake may stress kidneys in renal disease",category:"Macronutrient"},
+{name:"Carbohydrates",type:"macro",function:"Primary fuel source for the brain and muscles. Fibre feeds gut microbiota and regulates bowel function.",sources:"Grains, fruits, vegetables, legumes, dairy",deficiency:"Hypoglycaemia, ketosis, impaired brain function, fatigue, muscle loss",rda:"45–65% of total calories; at least 130g/day for brain",toxicity:"Excess refined carbs linked to obesity, insulin resistance, type 2 diabetes",category:"Macronutrient"},
+{name:"Fats (Lipids)",type:"macro",function:"Cell membrane integrity, fat-soluble vitamin absorption (A, D, E, K), hormone production, insulation, and brain structure.",sources:"Olive oil, avocado, nuts, seeds, fatty fish, butter",deficiency:"Deficiency of essential fatty acids: dry skin, poor wound healing, hormonal disruption",rda:"20–35% of total calories; essential fatty acids: omega-3 and omega-6",toxicity:"Excess saturated and trans fats raise cardiovascular risk",category:"Macronutrient"},
+{name:"Water",type:"macro",function:"Solvent for biochemical reactions, temperature regulation, nutrient transport, joint lubrication, and waste excretion.",sources:"Beverages, fruits, vegetables (cucumbers, watermelon)",deficiency:"Dehydration: fatigue, confusion, dark urine, constipation, kidney stones",rda:"~2.7L/day (women), ~3.7L/day (men) from all sources",toxicity:"Hyponatraemia possible with extreme over-consumption",category:"Macronutrient"},
+
+// VITAMINS — FAT SOLUBLE
+{name:"Vitamin A",type:"vitamin",function:"Vision (rhodopsin synthesis), immune function, cell differentiation, skin and mucous membrane integrity, reproductive health.",sources:"Liver, eggs, dairy, orange/yellow vegetables (beta-carotene), leafy greens",deficiency:"Night blindness, xerophthalmia, increased infection susceptibility, dry skin",rda:"700–900 mcg RAE/day",toxicity:"Hypervitaminosis A: liver toxicity, bone pain, teratogenic in pregnancy (preformed A)",category:"Fat-Soluble Vitamin"},
+{name:"Vitamin D",type:"vitamin",function:"Calcium and phosphorus absorption, bone mineralisation, immune modulation, muscle function, gene expression.",sources:"Sunlight (UVB), fatty fish, egg yolks, fortified dairy, mushrooms (UV-exposed)",deficiency:"Rickets (children), osteomalacia (adults), increased infection risk, depression",rda:"600–800 IU/day; many experts recommend 1000–4000 IU based on serum levels",toxicity:"Hypercalcaemia at very high doses; generally low risk",category:"Fat-Soluble Vitamin"},
+{name:"Vitamin E",type:"vitamin",function:"Antioxidant protecting cell membranes from lipid peroxidation. Immune function, platelet aggregation, gene regulation.",sources:"Nuts (almonds), seeds (sunflower), vegetable oils, avocado, dark leafy greens",deficiency:"Rare; peripheral neuropathy, haemolytic anaemia, ataxia in fat malabsorption",rda:"15 mg alpha-tocopherol/day",toxicity:"High doses may increase bleeding risk and potentially reduce vitamin K activity",category:"Fat-Soluble Vitamin"},
+{name:"Vitamin K",type:"vitamin",function:"Essential for blood clotting (factors II, VII, IX, X) and bone mineralisation (osteocalcin). Cardiovascular protection.",sources:"Dark leafy greens (K1), fermented foods, natto, organ meats (K2)",deficiency:"Excessive bleeding, poor wound healing, bone loss",rda:"90–120 mcg/day",toxicity:"Generally non-toxic; K3 (menadione) synthetic form can cause toxicity",category:"Fat-Soluble Vitamin"},
+
+// VITAMINS — WATER SOLUBLE
+{name:"Vitamin C",type:"vitamin",function:"Antioxidant, collagen synthesis, immune function, iron absorption, neurotransmitter synthesis, wound healing.",sources:"Citrus fruits, kiwi, bell peppers, broccoli, strawberries, rose hips",deficiency:"Scurvy: bleeding gums, poor wound healing, perifollicular haemorrhages, fatigue",rda:"75–90 mg/day; smokers need an additional 35 mg",toxicity:"GI upset at high doses (>2g); kidney stones possible in susceptible individuals",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B1 (Thiamine)",type:"vitamin",function:"Coenzyme in carbohydrate and amino acid metabolism. Essential for nerve and heart function, pyruvate dehydrogenase complex.",sources:"Whole grains, legumes, pork, nutritional yeast, seeds",deficiency:"Beriberi (wet: cardiac; dry: neuropathy), Wernicke-Korsakoff syndrome in alcoholism",rda:"1.1–1.2 mg/day",toxicity:"Very low toxicity; excess excreted renally",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B2 (Riboflavin)",type:"vitamin",function:"Component of FAD and FMN coenzymes. Energy metabolism, antioxidant regeneration, fat and protein metabolism.",sources:"Dairy, meat, eggs, leafy greens, almonds, nutritional yeast",deficiency:"Ariboflavinosis: sore throat, glossitis, angular cheilitis, photophobia, seborrhoeic dermatitis",rda:"1.1–1.3 mg/day",toxicity:"Non-toxic; excess excreted in urine (turns bright yellow)",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B3 (Niacin)",type:"vitamin",function:"Component of NAD and NADP. Involved in over 400 enzymatic reactions — energy metabolism, DNA repair, cell signalling.",sources:"Meat, fish, peanuts, whole grains, mushrooms, fortified cereals",deficiency:"Pellagra: the 4 Ds — Dermatitis, Diarrhoea, Dementia, Death",rda:"14–16 mg NE/day",toxicity:"High-dose niacin causes flushing, liver toxicity; nicotinamide form avoids flushing",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B5 (Pantothenic Acid)",type:"vitamin",function:"Component of Coenzyme A — essential for fatty acid synthesis, Krebs cycle, hormone synthesis, and acetylcholine production.",sources:"Widely distributed: liver, egg yolk, avocado, mushrooms, legumes, whole grains",deficiency:"Rare; burning foot syndrome, fatigue, irritability, sleep disturbance",rda:"5 mg/day (AI)",toxicity:"No established UL; high doses may cause GI upset",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B6 (Pyridoxine)",type:"vitamin",function:"Coenzyme for over 100 reactions — amino acid metabolism, neurotransmitter synthesis (serotonin, GABA, dopamine), haem production.",sources:"Meat, fish, poultry, bananas, potatoes, chickpeas, fortified cereals",deficiency:"Peripheral neuropathy, dermatitis, glossitis, depression, anaemia, immune impairment",rda:"1.3–1.7 mg/day",toxicity:"Sensory neuropathy with chronic high doses (>100mg/day)",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B7 (Biotin)",type:"vitamin",function:"Cofactor for carboxylase enzymes — fatty acid synthesis, gluconeogenesis, amino acid catabolism. Hair, nail, and skin health.",sources:"Egg yolk (cooked), liver, nuts, seeds, salmon, whole grains",deficiency:"Hair loss, brittle nails, dermatitis, neurological symptoms; raw egg white blocks absorption",rda:"30 mcg/day (AI)",toxicity:"No known toxicity; can interfere with laboratory immunoassay tests",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B9 (Folate)",type:"vitamin",function:"DNA synthesis and methylation, red blood cell formation, neural tube development, homocysteine metabolism.",sources:"Leafy greens, legumes, liver, avocado, citrus, fortified grains (as folic acid)",deficiency:"Megaloblastic anaemia, neural tube defects (in utero), elevated homocysteine",rda:"400 mcg DFE/day; 600 mcg in pregnancy",toxicity:"High folic acid can mask B12 deficiency; possible risk of promoting tumour growth at very high doses",category:"Water-Soluble Vitamin"},
+{name:"Vitamin B12 (Cobalamin)",type:"vitamin",function:"DNA synthesis, myelin sheath formation, red blood cell production, nerve function, methylation (with folate).",sources:"Meat, fish, dairy, eggs — only in animal products; fortified foods for vegans",deficiency:"Pernicious anaemia, subacute combined degeneration of spinal cord, neuropathy, glossitis",rda:"2.4 mcg/day",toxicity:"Essentially non-toxic; excess excreted renally",category:"Water-Soluble Vitamin"},
+
+// MINERALS
+{name:"Calcium",type:"mineral",function:"Bone and tooth mineralisation (99% of body calcium), muscle contraction, nerve transmission, blood clotting, enzyme activation.",sources:"Dairy, sardines with bones, leafy greens (kale, bok choy), fortified foods, tofu",deficiency:"Rickets (children), osteoporosis, hypocalcaemia: tetany, muscle cramps, arrhythmias",rda:"1000–1200 mg/day",toxicity:"Hypercalcaemia: kidney stones, calcification, impaired absorption of iron and zinc",category:"Major Mineral"},
+{name:"Magnesium",type:"mineral",function:"Cofactor in 300+ enzyme reactions. ATP production, protein synthesis, DNA repair, muscle relaxation, nerve function, blood sugar regulation.",sources:"Dark leafy greens, nuts, seeds, legumes, dark chocolate, whole grains, avocado",deficiency:"Muscle cramps, fatigue, anxiety, insomnia, constipation, hypertension, cardiac arrhythmias",rda:"310–420 mg/day",toxicity:"GI upset from supplemental forms; severe toxicity rare (mostly in renal failure)",category:"Major Mineral"},
+{name:"Phosphorus",type:"mineral",function:"Bone and teeth mineralisation, ATP energy currency, phospholipid cell membranes, DNA/RNA backbone, acid-base balance.",sources:"Meat, fish, dairy, eggs, legumes, whole grains — widespread in food supply",deficiency:"Rare from diet; hypophosphataemia in alcoholism, malnutrition, antacid overuse",rda:"700 mg/day",toxicity:"Excess phosphorus impairs calcium absorption and may harm kidneys",category:"Major Mineral"},
+{name:"Potassium",type:"mineral",function:"Membrane potential, fluid balance, nerve impulse transmission, muscle contraction, blood pressure regulation, heart rhythm.",sources:"Bananas, potatoes, avocado, legumes, leafy greens, tomatoes, dairy",deficiency:"Hypokalaemia: muscle weakness, cramps, arrhythmias, fatigue, constipation",rda:"2600–3400 mg/day (AI)",toxicity:"Hyperkalaemia in renal failure or excessive supplementation: dangerous cardiac arrhythmias",category:"Major Mineral"},
+{name:"Sodium",type:"mineral",function:"Extracellular fluid volume, nerve impulse transmission, muscle contraction, nutrient absorption (glucose co-transport), pH balance.",sources:"Table salt, processed foods, dairy, meat, condiments",deficiency:"Hyponatraemia: headache, confusion, nausea, seizures — rare in normal diet",rda:"<2300 mg/day (AI); most consume excess",toxicity:"Hypertension, cardiovascular disease, kidney disease with chronic excess",category:"Major Mineral"},
+{name:"Iron",type:"mineral",function:"Component of haemoglobin (oxygen transport) and myoglobin, cytochromes for ATP production, immune function, cognitive development.",sources:"Red meat (haem iron), liver, oysters, legumes, fortified cereals, tofu, spinach",deficiency:"Iron-deficiency anaemia: fatigue, pallor, shortness of breath, cognitive impairment, pica",rda:"8–18 mg/day (higher for menstruating women and pregnant women)",toxicity:"Haemochromatosis (genetic), GI damage, oxidative stress — iron is pro-oxidant in excess",category:"Trace Mineral"},
+{name:"Zinc",type:"mineral",function:"Immune function (T-cell development), wound healing, protein synthesis, DNA repair, taste and smell, enzyme cofactor (200+ enzymes).",sources:"Oysters (highest), red meat, poultry, legumes, nuts, seeds, whole grains",deficiency:"Growth retardation, immune dysfunction, delayed wound healing, loss of taste/smell, hypogonadism",rda:"8–11 mg/day",toxicity:"Excess zinc impairs copper absorption, immune suppression, nausea",category:"Trace Mineral"},
+{name:"Selenium",type:"mineral",function:"Antioxidant (glutathione peroxidase), thyroid hormone metabolism (T4→T3 conversion), immune function, DNA synthesis.",sources:"Brazil nuts (highest), seafood, organ meats, eggs, whole grains, dairy",deficiency:"Keshan disease (cardiomyopathy), Kashin-Beck disease (joint), hypothyroidism, impaired immunity",rda:"55 mcg/day",toxicity:"Selenosis at high doses: hair and nail loss, neurological symptoms, garlic breath (dimethyl selenide)",category:"Trace Mineral"},
+{name:"Iodine",type:"mineral",function:"Essential for thyroid hormone synthesis (T3 and T4). Critical for metabolic rate, foetal brain development, and growth.",sources:"Seaweed, seafood, iodised salt, dairy (from iodine-treated equipment)",deficiency:"Hypothyroidism, goitre, cretinism (foetal/neonatal), impaired cognitive development",rda:"150 mcg/day; 220 mcg in pregnancy",toxicity:"Excess can cause hyperthyroidism or hypothyroidism (Wolff-Chaikoff effect); thyroiditis",category:"Trace Mineral"},
+{name:"Copper",type:"mineral",function:"Iron metabolism and transport, connective tissue synthesis (collagen cross-linking), energy production, antioxidant enzyme (SOD), melanin synthesis.",sources:"Organ meats, shellfish, nuts, seeds, chocolate, legumes, whole grains",deficiency:"Anaemia, neutropaenia, bone abnormalities, depigmentation, neurological deficits",rda:"900 mcg/day",toxicity:"Wilson's disease (genetic copper accumulation); acute poisoning causes GI symptoms, liver damage",category:"Trace Mineral"},
+{name:"Manganese",type:"mineral",function:"Cofactor for antioxidant (MnSOD), carbohydrate and fat metabolism, bone formation, wound healing, sex hormone synthesis.",sources:"Whole grains, nuts, seeds, tea, leafy greens, legumes",deficiency:"Rare: poor bone density, impaired glucose tolerance, skin rash",rda:"1.8–2.3 mg/day (AI)",toxicity:"Manganism from occupational exposure: neurological symptoms resembling Parkinson's",category:"Trace Mineral"},
+{name:"Chromium",type:"mineral",function:"Enhances insulin signalling — potentiates insulin action on glucose uptake. May improve lipid profile.",sources:"Broccoli, green beans, wholegrains, nuts, meat, brewer's yeast",deficiency:"Impaired glucose tolerance, insulin resistance",rda:"25–35 mcg/day (AI)",toxicity:"Trivalent form (Cr3+) low toxicity; hexavalent (Cr6+) from industry is carcinogenic",category:"Trace Mineral"},
+{name:"Fluoride",type:"mineral",function:"Bone mineralisation and tooth enamel hardening. Prevents dental caries by incorporating into hydroxyapatite.",sources:"Fluoridated water, seafood, tea, dental products",deficiency:"Increased dental caries, possibly reduced bone density",rda:"3–4 mg/day (AI)",toxicity:"Dental fluorosis (mottling); skeletal fluorosis at very high intakes over years",category:"Trace Mineral"},
+{name:"Molybdenum",type:"mineral",function:"Cofactor for enzymes breaking down amino acids and purines (xanthine oxidase, aldehyde oxidase, sulphite oxidase).",sources:"Legumes, grains, nuts, liver, dairy",deficiency:"Extremely rare; reported in TPN patients — tachycardia, mental disturbance",rda:"45 mcg/day",toxicity:"High intakes may precipitate gout via xanthine oxidase stimulation",category:"Trace Mineral"},
+{name:"Omega-3 Fatty Acids",type:"vitamin",function:"Anti-inflammatory (EPA/DHA), brain structure (DHA in myelin and neuronal membranes), cardiovascular protection, eye health.",sources:"Fatty fish (salmon, mackerel, sardines), algae oil, flaxseed, chia, walnuts",deficiency:"Inflammation, poor brain development, dry eyes, cardiovascular risk, depression",rda:"1.1–1.6g ALA/day; EPA+DHA 250–500mg/day recommended",toxicity:"High doses may increase bleeding time; fishy breath",category:"Essential Fatty Acid"},
+{name:"Omega-6 Fatty Acids",type:"vitamin",function:"Precursor to pro- and anti-inflammatory eicosanoids, cell membrane fluidity, skin barrier function.",sources:"Vegetable oils (sunflower, corn, soybean), nuts, seeds",deficiency:"Rare; dry scaly skin, poor wound healing, impaired immunity",rda:"11–17g/day (AI)",toxicity:"Western diets have excess omega-6:omega-3 ratios linked to chronic inflammation",category:"Essential Fatty Acid"},
+{name:"Coenzyme Q10",type:"vitamin",function:"Essential for ATP production in mitochondria (electron transport chain). Potent antioxidant protecting mitochondrial membranes.",sources:"Organ meats, sardines, mackerel, beef, peanuts; synthesised in body",deficiency:"Fatigue, muscle weakness; reduced by statins; declines with age",rda:"No official RDA; therapeutic: 100–300mg/day",toxicity:"Well tolerated; may interact with warfarin",category:"Micronutrient"},
+];
+
+// =====================================================
+// STATE
+// =====================================================
+const ACTIONS_POOL = [...new Set(HERBS.map(h => h.primary))];
+
+let herbState = {
+  mode:'action', difficulty:'hard',
+  questions:[], current:0, score:0, streak:0, results:[], answered:false
+};
+let nutrientState = {
+  type:'all', questions:[], current:0, score:0, streak:0, results:[], answered:false
+};
+let currentSection = 'herbs';
+const HERB_SESSION = 12;
+const NUTRIENT_SESSION = 10;
+
+// =====================================================
+// NAV
+// =====================================================
+function showSection(s) {
+  currentSection = s;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+s).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (s === 'reference') renderReference();
+}
+
+// =====================================================
+// HERB QUIZ
+// =====================================================
+function shuffle(a) { return [...a].sort(() => Math.random()-.5); }
+
+function generateHerbQuestions() {
+  const herbs = shuffle(HERBS).slice(0, HERB_SESSION);
+  return herbs.map(herb => {
+    let mode = herbState.mode === 'mixed' ? (Math.random()>.5?'herb':'action') : herbState.mode;
+    if (mode === 'herb') {
+      const correct = herb.primary;
+      const distractors = shuffle(ACTIONS_POOL.filter(a=>a!==correct)).slice(0,3);
+      return {herb, mode:'herb', question:herb.name, correct, options:shuffle([correct,...distractors])};
+    } else {
+      const correct = herb.name;
+      const distractors = shuffle(HERBS.filter(h=>h.name!==correct&&h.primary!==herb.primary)).slice(0,3).map(h=>h.name);
+      return {herb, mode:'action', question:herb.primary, correct, options:shuffle([correct,...distractors])};
+    }
+  });
+}
+
+function startHerbQuiz() {
+  document.getElementById('herb-splash').style.display = 'none';
+  document.getElementById('herb-quiz-ui').style.display = 'block';
+  herbState.questions = generateHerbQuestions();
+  herbState.current = 0; herbState.score = 0; herbState.streak = 0; herbState.results = [];
+  renderHerbQ();
+}
+
+function setHerbMode(m) {
+  herbState.mode = m;
+  ['action','herb','mixed'].forEach(x => document.getElementById('m-'+x).classList.remove('active'));
+  document.getElementById('m-'+m).classList.add('active');
+  if(document.getElementById('herb-quiz-ui').style.display !== 'none') {
+    herbState.questions = generateHerbQuestions();
+    herbState.current = 0; herbState.score = 0; herbState.streak = 0; herbState.results = [];
+    renderHerbQ();
+  }
+}
+
+function setDifficulty(d) {
+  herbState.difficulty = d;
+  ['easy','hard'].forEach(x => document.getElementById('m-'+x).classList.remove('active'));
+  document.getElementById('m-'+d).classList.add('active');
+  if(document.getElementById('herb-quiz-ui').style.display !== 'none') {
+    herbState.questions = generateHerbQuestions();
+    herbState.current = 0; herbState.score = 0; herbState.streak = 0; herbState.results = [];
+    renderHerbQ();
+  }
+}
+
+function renderHerbQ() {
+  herbState.answered = false;
+  const q = herbState.questions[herbState.current];
+  // Reset
+  document.getElementById('herb-result').classList.remove('show');
+  const fb = document.getElementById('h-feedback');
+  fb.classList.remove('show','correct-fb','wrong-fb');
+  document.getElementById('h-next-btn').classList.remove('show');
+  // Stats
+  document.getElementById('h-score').textContent = herbState.score;
+  document.getElementById('h-streak').textContent = herbState.streak + (herbState.streak>=3?'🔥':'');
+  document.getElementById('h-progress').textContent = `${herbState.current+1}/${HERB_SESSION}`;
+  document.getElementById('h-accuracy').textContent = herbState.current===0?'—':Math.round(herbState.score/herbState.current*100)+'%';
+  document.getElementById('h-progress-fill').style.width = (herbState.current/HERB_SESSION*100)+'%';
+  // Q text
+  document.getElementById('h-pill').textContent = q.mode==='herb'?'Herb → Action':'Action → Herb';
+  document.getElementById('h-qnum').textContent = `Question ${herbState.current+1} of ${HERB_SESSION}`;
+  if(q.mode==='herb') {
+    document.getElementById('h-qtext').innerHTML = `What is the primary action of <em>${q.question}</em>?`;
+    document.getElementById('h-qsub').textContent = q.herb.latin;
+  } else {
+    document.getElementById('h-qtext').innerHTML = `Which herb is a primary <em>${q.question}</em>?`;
+    document.getElementById('h-qsub').textContent = `System: ${q.herb.system}`;
+  }
+  // Mode switch
+  if(herbState.difficulty === 'easy') {
+    document.getElementById('h-options').style.display = 'grid';
+    document.getElementById('h-hard-mode').style.display = 'none';
+    renderEasyOptions(q);
+  } else {
+    document.getElementById('h-options').style.display = 'none';
+    document.getElementById('h-hard-mode').style.display = 'block';
+    setupHardMode(q);
+  }
+}
+
+function renderEasyOptions(q) {
+  const keys = ['A','B','C','D'];
+  const grid = document.getElementById('h-options');
+  grid.innerHTML = '';
+  q.options.forEach((opt,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-key">${keys[i]}</span>${opt}`;
+    btn.onclick = () => answerHerb(opt, btn, q);
+    grid.appendChild(btn);
+  });
+}
+
+function setupHardMode(q) {
+  const input = document.getElementById('h-hard-input');
+  input.value = '';
+  input.className = 'hard-input';
+  input.disabled = false;
+  document.getElementById('h-hard-submit').style.display = 'block';
+  document.getElementById('h-autocomplete').classList.remove('show');
+  document.getElementById('h-autocomplete').innerHTML = '';
+  setTimeout(()=>input.focus(),100);
+}
+
+let hardAutoOptions = [];
+function hardInputChange(inp) {
+  const val = inp.value.toLowerCase().trim();
+  const ac = document.getElementById('h-autocomplete');
+  if(!val) { ac.classList.remove('show'); return; }
+  const q = herbState.questions[herbState.current];
+  // Build pool based on question mode
+  const pool = q.mode === 'herb' ? ACTIONS_POOL : HERBS.map(h=>h.name);
+  hardAutoOptions = pool.filter(o => o.toLowerCase().includes(val)).slice(0,6);
+  if(hardAutoOptions.length===0){ ac.classList.remove('show'); return; }
+  ac.innerHTML = hardAutoOptions.map(o=>`<div class="ac-item" onclick="selectAC('${o.replace(/'/g,"\\'")}')"> ${o}</div>`).join('');
+  ac.classList.add('show');
+}
+
+function selectAC(val) {
+  document.getElementById('h-hard-input').value = val;
+  document.getElementById('h-autocomplete').classList.remove('show');
+}
+
+function hardKeyDown(e) {
+  if(e.key==='Enter') submitHard();
+}
+
+function submitHard() {
+  if(herbState.answered) return;
+  const q = herbState.questions[herbState.current];
+  const input = document.getElementById('h-hard-input');
+  document.getElementById('h-autocomplete').classList.remove('show');
+  const val = input.value.trim().toLowerCase();
+  const correct = q.correct.toLowerCase();
+  const isCorrect = val === correct || correct.includes(val) && val.length > 3;
+  input.className = 'hard-input ' + (isCorrect?'correct':'wrong');
+  input.disabled = true;
+  document.getElementById('h-hard-submit').style.display = 'none';
+  showHerbFeedback(isCorrect, q, val);
+}
+
+function answerHerb(chosen, btn, q) {
+  if(herbState.answered) return;
+  herbState.answered = true;
+  const correct = chosen === q.correct;
+  document.querySelectorAll('.opt-btn').forEach(b => {
+    b.disabled = true;
+    const lbl = b.textContent.replace(/^[A-D]/,'').trim();
+    if(lbl === q.correct) b.classList.add('correct');
+    else if(b===btn && !correct) b.classList.add('wrong');
+    else b.classList.add('reveal');
+  });
+  showHerbFeedback(correct, q, chosen);
+}
+
+function showHerbFeedback(correct, q, chosen) {
+  herbState.answered = true;
+  if(correct) { herbState.score++; herbState.streak++; }
+  else { herbState.streak = 0; }
+  herbState.results.push({herb:q.herb.name, correct, chosen, expected:q.correct});
+  document.getElementById('h-score').textContent = herbState.score;
+  document.getElementById('h-streak').textContent = herbState.streak+(herbState.streak>=3?'🔥':'');
+  document.getElementById('h-accuracy').textContent = Math.round(herbState.score/(herbState.current+1)*100)+'%';
+
+  const fb = document.getElementById('h-feedback');
+  fb.classList.add('show', correct?'correct-fb':'wrong-fb');
+  document.getElementById('h-fb-title').textContent = correct?'✓ Correct':'✗ Incorrect — correct answer: '+q.correct;
+  const chips = q.herb.actions.map(a=>`<span class="action-chip">${a}</span>`).join('');
+  document.getElementById('h-fb-body').innerHTML = `<strong>${q.herb.name}</strong> <em>${q.herb.latin}</em><br><br>${q.herb.notes}<div class="fb-actions-list">${chips}</div>`;
+  document.getElementById('h-next-btn').classList.add('show');
+  document.getElementById('h-next-btn').textContent = herbState.current+1>=HERB_SESSION?'See Results →':'Next →';
+}
+
+function nextHerbQ() {
+  herbState.current++;
+  if(herbState.current >= HERB_SESSION) { showHerbResults(); return; }
+  const card = document.getElementById('h-card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='cardIn .4s ease both';
+  renderHerbQ();
+}
+
+function showHerbResults() {
+  document.getElementById('herb-quiz-ui').style.display='none';
+  const rs = document.getElementById('herb-result');
+  rs.classList.add('show');
+  const pct = Math.round(herbState.score/HERB_SESSION*100);
+  document.getElementById('h-res-emoji').textContent = pct>=90?'🌳':pct>=70?'🌿':pct>=50?'🌱':'🪴';
+  document.getElementById('h-res-score').textContent = `${herbState.score}/${HERB_SESSION}`;
+  document.getElementById('h-res-pct').textContent = `${pct}% — ${pct>=90?'Excellent!':pct>=70?'Well done':pct>=50?'Keep studying':'Back to the books'}`;
+  document.getElementById('h-breakdown').innerHTML = herbState.results.map(r=>`
+    <div class="bd-row">
+      <span class="bd-herb">${r.herb}</span>
+      <span class="${r.correct?'bd-ok':'bd-bad'}">${r.correct?'✓':`✗ (got: ${r.chosen})`}</span>
+    </div>`).join('');
+}
+
+function restartHerbs() {
+  herbState.current=0; herbState.score=0; herbState.streak=0; herbState.results=[];
+  herbState.questions = generateHerbQuestions();
+  document.getElementById('herb-result').classList.remove('show');
+  document.getElementById('herb-quiz-ui').style.display='block';
+  renderHerbQ();
+}
+
+// =====================================================
+// NUTRIENT QUIZ
+// =====================================================
+function setNutrientType(t) {
+  nutrientState.type = t;
+  document.querySelectorAll('.nt-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('nt-'+t).classList.add('active');
+}
+
+function generateNutrientQuestions() {
+  const pool = nutrientState.type==='all' ? NUTRIENTS :
+               nutrientState.type==='macro' ? NUTRIENTS.filter(n=>n.type==='macro') :
+               nutrientState.type==='vitamin' ? NUTRIENTS.filter(n=>n.type==='vitamin') :
+               NUTRIENTS.filter(n=>n.type==='mineral');
+  const items = shuffle(pool).slice(0, Math.min(NUTRIENT_SESSION, pool.length));
+  const questionTypes = ['deficiency','function','sources'];
+  return items.map(nut => {
+    const qType = questionTypes[Math.floor(Math.random()*questionTypes.length)];
+    let questionText, correct, optionPool;
+    if(qType==='deficiency') {
+      questionText = `Which condition is associated with <em>${nut.name}</em> deficiency?`;
+      correct = nut.deficiency.split(';')[0].split(':').pop().trim().split(',')[0].trim();
+      optionPool = shuffle(NUTRIENTS.filter(n=>n.name!==nut.name)).slice(0,3).map(n=>n.deficiency.split(';')[0].split(':').pop().trim().split(',')[0].trim());
+    } else if(qType==='function') {
+      questionText = `What is a key function of <em>${nut.name}</em>?`;
+      correct = nut.function.split('.')[0].trim();
+      optionPool = shuffle(NUTRIENTS.filter(n=>n.name!==nut.name)).slice(0,3).map(n=>n.function.split('.')[0].trim());
+    } else {
+      questionText = `Which nutrient is best known for: <em>${nut.function.split('.')[0]}</em>?`;
+      correct = nut.name;
+      optionPool = shuffle(NUTRIENTS.filter(n=>n.name!==nut.name&&n.type===nut.type)).slice(0,3).map(n=>n.name);
+      if(optionPool.length<3) optionPool = shuffle(NUTRIENTS.filter(n=>n.name!==nut.name)).slice(0,3).map(n=>n.name);
+    }
+    return {nut, qType, questionText, correct, options:shuffle([correct,...optionPool.slice(0,3)])};
+  });
+}
+
+function startNutrientQuiz() {
+  document.getElementById('n-splash').style.display='none';
+  document.getElementById('n-quiz-ui').style.display='block';
+  nutrientState.questions = generateNutrientQuestions();
+  nutrientState.current=0; nutrientState.score=0; nutrientState.streak=0; nutrientState.results=[];
+  renderNutrientQ();
+}
+
+function renderNutrientQ() {
+  nutrientState.answered = false;
+  const q = nutrientState.questions[nutrientState.current];
+  document.getElementById('n-result').classList.remove('show');
+  document.getElementById('n-feedback').classList.remove('show','correct-fb','wrong-fb');
+  document.getElementById('n-next-btn').classList.remove('show');
+  document.getElementById('n-score').textContent = nutrientState.score;
+  document.getElementById('n-streak').textContent = nutrientState.streak+(nutrientState.streak>=3?'🔥':'');
+  document.getElementById('n-progress').textContent = `${nutrientState.current+1}/${nutrientState.questions.length}`;
+  document.getElementById('n-accuracy').textContent = nutrientState.current===0?'—':Math.round(nutrientState.score/nutrientState.current*100)+'%';
+  document.getElementById('n-progress-fill').style.width=(nutrientState.current/nutrientState.questions.length*100)+'%';
+  document.getElementById('n-pill').textContent = q.nut.category;
+  document.getElementById('n-qnum').textContent = `Question ${nutrientState.current+1} of ${nutrientState.questions.length}`;
+  document.getElementById('n-qtext').innerHTML = q.questionText;
+  document.getElementById('n-qsub').textContent = q.qType==='deficiency'?'Identify the deficiency sign':q.qType==='function'?'Select the primary function':'Identify the nutrient';
+  const row = document.getElementById('n-options');
+  row.innerHTML = '';
+  // Use 2-col grid for nutrient options
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:.6rem;';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'nq-opt';
+    btn.textContent = opt;
+    btn.onclick = () => answerNutrient(opt, btn, q);
+    row.appendChild(btn);
+  });
+}
+
+function answerNutrient(chosen, btn, q) {
+  if(nutrientState.answered) return;
+  nutrientState.answered = true;
+  const correct = chosen === q.correct;
+  document.querySelectorAll('.nq-opt').forEach(b => {
+    b.disabled = true;
+    if(b.textContent===q.correct) b.classList.add('correct');
+    else if(b===btn&&!correct) b.classList.add('wrong');
+    else b.classList.add('reveal');
+  });
+  if(correct){nutrientState.score++;nutrientState.streak++;}else{nutrientState.streak=0;}
+  nutrientState.results.push({name:q.nut.name,correct,chosen,expected:q.correct});
+  document.getElementById('n-score').textContent=nutrientState.score;
+  document.getElementById('n-streak').textContent=nutrientState.streak+(nutrientState.streak>=3?'🔥':'');
+  document.getElementById('n-accuracy').textContent=Math.round(nutrientState.score/(nutrientState.current+1)*100)+'%';
+  const fb=document.getElementById('n-feedback');
+  fb.classList.add('show',correct?'correct-fb':'wrong-fb');
+  document.getElementById('n-fb-title').textContent=correct?'✓ Correct':'✗ Incorrect — answer: '+q.correct;
+  document.getElementById('n-fb-body').innerHTML=`<strong>${q.nut.name}</strong> (${q.nut.category})<br><br>
+    <strong>Function:</strong> ${q.nut.function}<br>
+    <strong>Sources:</strong> ${q.nut.sources}<br>
+    <strong>Deficiency:</strong> ${q.nut.deficiency}<br>
+    <strong>RDA:</strong> ${q.nut.rda}`;
+  document.getElementById('n-next-btn').classList.add('show');
+  document.getElementById('n-next-btn').textContent=nutrientState.current+1>=nutrientState.questions.length?'See Results →':'Next →';
+}
+
+function nextNutrientQ() {
+  nutrientState.current++;
+  if(nutrientState.current>=nutrientState.questions.length){showNutrientResults();return;}
+  const card=document.getElementById('n-card');
+  card.style.animation='none';void card.offsetWidth;card.style.animation='cardIn .4s ease both';
+  renderNutrientQ();
+}
+
+function showNutrientResults() {
+  document.getElementById('n-quiz-ui').style.display='none';
+  const rs=document.getElementById('n-result');rs.classList.add('show');
+  const tot=nutrientState.questions.length;
+  const pct=Math.round(nutrientState.score/tot*100);
+  document.getElementById('n-res-emoji').textContent=pct>=90?'⭐':pct>=70?'⚗️':pct>=50?'🧪':'📚';
+  document.getElementById('n-res-score').textContent=`${nutrientState.score}/${tot}`;
+  document.getElementById('n-res-pct').textContent=`${pct}% — ${pct>=90?'Master level!':pct>=70?'Well done!':pct>=50?'Keep studying':'More practice needed'}`;
+  document.getElementById('n-breakdown').innerHTML=nutrientState.results.map(r=>`
+    <div class="bd-row">
+      <span class="bd-herb">${r.name}</span>
+      <span class="${r.correct?'bd-ok':'bd-bad'}">${r.correct?'✓':`✗ (${r.chosen})`}</span>
+    </div>`).join('');
+}
+
+function restartNutrients() {
+  nutrientState.current=0;nutrientState.score=0;nutrientState.streak=0;nutrientState.results=[];
+  nutrientState.questions=generateNutrientQuestions();
+  document.getElementById('n-result').classList.remove('show');
+  document.getElementById('n-quiz-ui').style.display='block';
+  renderNutrientQ();
+}
+
+// =====================================================
+// REFERENCE
+// =====================================================
+let refRendered = false;
+function renderReference() {
+  if(refRendered) return;
+  refRendered = true;
+  const grid = document.getElementById('ref-grid');
+  grid.innerHTML = HERBS.map((h,i) => `
+    <div class="ref-item" id="ref-${i}" onclick="toggleRef(${i})">
+      <div class="ref-item-header">
+        <div>
+          <div class="ref-name">${h.name}</div>
+          <div class="ref-latin">${h.latin}</div>
+        </div>
+        <span class="ref-primary">${h.primary}</span>
+      </div>
+      <div class="ref-actions-preview">${h.actions.map(a=>`<span class="action-chip">${a}</span>`).join('')}</div>
+      <div class="ref-body">${h.notes}<br><br><em>System: ${h.system}</em></div>
+    </div>`).join('');
+}
+
+function toggleRef(i) {
+  document.getElementById('ref-'+i).classList.toggle('open');
+}
+
+function filterRef(val) {
+  renderReference();
+  const v = val.toLowerCase();
+  HERBS.forEach((h,i) => {
+    const el = document.getElementById('ref-'+i);
+    const match = !v || h.name.toLowerCase().includes(v) || h.latin.toLowerCase().includes(v) ||
+                  h.actions.some(a=>a.toLowerCase().includes(v)) || h.system.toLowerCase().includes(v) ||
+                  h.notes.toLowerCase().includes(v);
+    el.style.display = match?'':'none';
+  });
+}
+
+// =====================================================
+// INIT
+// =====================================================
+// Splash herb chips
+const chips = document.getElementById('herb-preview-chips');
+shuffle(HERBS).slice(0,12).forEach(h => {
+  const c = document.createElement('div');
+  c.className='herb-chip';
+  c.textContent=h.name;
+  chips.appendChild(c);
+});
+</script>
+</body>
+</html>
