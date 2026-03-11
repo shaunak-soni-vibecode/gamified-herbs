@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herbarium Clinical</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090e;
+  --s1: #0d1018;
+  --s2: #131720;
+  --s3: #181d28;
+  --teal: #4ecdc4;
+  --teal-dim: #2a7a75;
+  --teal-dark: #122e2c;
+  --gold: #f7c948;
+  --gold-dim: #8a6f20;
+  --cream: #e8e0cc;
+  --muted: #4a5568;
+  --muted2: #6b7a8d;
+  --correct: #56c079;
+  --wrong: #e05555;
+  --partial: #f7c948;
+  --white: #f0e8d8;
+  --border: rgba(78,205,196,0.1);
+  --border-h: rgba(78,205,196,0.3);
+  --immune: #7eb8f7;
+  --gut: #a8d878;
+  --skin: #f7a87e;
+  --stress: #c89ef7;
+  --pain: #f77e9e;
+  --resp: #7ef7d8;
+  --hormonal: #f7aee8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--cream);font-family:'IBM Plex Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.6;}
+.glow{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 55% 45% at 10% 70%,rgba(78,205,196,.06) 0%,transparent 65%),radial-gradient(ellipse 45% 35% at 90% 15%,rgba(247,201,72,.04) 0%,transparent 60%);}
+
+.app{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:1.2rem 1rem 5rem;}
+
+/* HEADER */
+.hdr{text-align:center;padding:1.2rem 0 .8rem;animation:fd .5s ease both;}
+.hdr-eyebrow{font-size:.58rem;letter-spacing:.25em;text-transform:uppercase;color:var(--teal-dim);margin-bottom:.4rem;}
+.hdr-title{font-family:'Libre Baskerville',serif;font-size:2.4rem;font-weight:700;color:var(--white);line-height:1;}
+.hdr-title span{color:var(--teal);}
+.hdr-sub{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:.3rem;}
+
+/* NAV */
+.nav{display:flex;gap:3px;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:1.5rem;animation:fd .5s .05s ease both;}
+.nav-btn{flex:1;background:transparent;border:none;border-radius:7px;padding:.6rem .4rem;color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;text-align:center;}
+.nav-btn:hover{color:var(--cream);}
+.nav-btn.active{background:var(--s3);color:var(--teal);border:1px solid var(--border);}
+
+/* PANELS */
+.panel{display:none;animation:fu .35s ease both;}
+.panel.active{display:block;}
+
+/* CATEGORY PILLS */
+.cat-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.2rem;}
+.cat-pill{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:.32rem .8rem;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .18s;color:var(--muted2);}
+.cat-pill:hover{color:var(--cream);border-color:var(--border-h);}
+.cat-pill.active{color:#07090e;font-weight:500;}
+.cat-pill[data-cat="all"].active{background:var(--teal);border-color:var(--teal);}
+.cat-pill[data-cat="immune"].active{background:var(--immune);border-color:var(--immune);color:#07090e;}
+.cat-pill[data-cat="gut"].active{background:var(--gut);border-color:var(--gut);color:#07090e;}
+.cat-pill[data-cat="skin"].active{background:var(--skin);border-color:var(--skin);color:#07090e;}
+.cat-pill[data-cat="stress"].active{background:var(--stress);border-color:var(--stress);color:#07090e;}
+.cat-pill[data-cat="pain"].active{background:var(--pain);border-color:var(--pain);color:#07090e;}
+.cat-pill[data-cat="respiratory"].active{background:var(--resp);border-color:var(--resp);color:#07090e;}
+.cat-pill[data-cat="hormonal"].active{background:var(--hormonal);border-color:var(--hormonal);color:#07090e;}
+.cat-pill[data-cat="mushrooms"].active{background:#c8a87e;border-color:#c8a87e;color:#07090e;}
+
+/* MODE ROW */
+.mode-row{display:flex;gap:.4rem;margin-bottom:1.2rem;}
+.mode-btn{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:7px;padding:.55rem;color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .18s;text-align:center;}
+.mode-btn:hover{color:var(--cream);border-color:var(--border-h);}
+.mode-btn.active{border-color:var(--teal);color:var(--teal);background:rgba(78,205,196,.07);}
+
+/* STATS */
+.stats{display:flex;justify-content:space-around;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:.75rem;margin-bottom:1rem;}
+.stat{display:flex;flex-direction:column;align-items:center;gap:.1rem;}
+.stat-v{font-size:1.2rem;font-weight:500;color:var(--gold);}
+.stat-v.t{color:var(--teal);}
+.stat-l{font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+
+/* TIMER BAR */
+.timer-wrap{height:3px;background:var(--s2);border-radius:2px;margin-bottom:.8rem;overflow:hidden;display:none;}
+.timer-wrap.show{display:block;}
+.timer-fill{height:100%;border-radius:2px;transition:width .1s linear;background:linear-gradient(90deg,var(--wrong),var(--gold),var(--teal));}
+
+/* PROGRESS */
+.prog-wrap{height:2px;background:var(--s2);border-radius:1px;margin-bottom:1.2rem;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--teal-dim),var(--teal));border-radius:1px;transition:width .4s ease;box-shadow:0 0 8px rgba(78,205,196,.35);}
+
+/* SCENARIO CARD */
+.scenario-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1rem;position:relative;overflow:hidden;animation:cardIn .4s ease both;}
+.scenario-card::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:radial-gradient(circle,rgba(78,205,196,.05),transparent 70%);pointer-events:none;}
+.sc-eyebrow{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem;}
+.sc-cat{font-size:.55rem;letter-spacing:.18em;text-transform:uppercase;padding:.22rem .65rem;border-radius:12px;font-weight:500;}
+.sc-cat.immune{background:rgba(126,184,247,.15);color:var(--immune);border:1px solid rgba(126,184,247,.25);}
+.sc-cat.gut{background:rgba(168,216,120,.15);color:var(--gut);border:1px solid rgba(168,216,120,.25);}
+.sc-cat.skin{background:rgba(247,168,126,.15);color:var(--skin);border:1px solid rgba(247,168,126,.25);}
+.sc-cat.stress{background:rgba(200,158,247,.15);color:var(--stress);border:1px solid rgba(200,158,247,.25);}
+.sc-cat.pain{background:rgba(247,126,158,.15);color:var(--pain);border:1px solid rgba(247,126,158,.25);}
+.sc-cat.respiratory{background:rgba(126,247,216,.15);color:var(--resp);border:1px solid rgba(126,247,216,.25);}
+.sc-cat.hormonal{background:rgba(247,174,232,.15);color:var(--hormonal);border:1px solid rgba(247,174,232,.25);}
+.sc-cat.mushrooms{background:rgba(200,168,126,.15);color:#c8a87e;border:1px solid rgba(200,168,126,.25);}
+.sc-qnum{font-size:.58rem;color:var(--muted);letter-spacing:.1em;margin-left:auto;}
+.sc-text{font-family:'Libre Baskerville',serif;font-size:1.25rem;font-weight:400;line-height:1.6;color:var(--white);}
+.sc-text em{font-style:italic;color:var(--teal);}
+
+/* THREE COLUMN ANSWER GRID */
+.answer-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:1rem;}
+.answer-col{display:flex;flex-direction:column;gap:.4rem;}
+.answer-col-label{font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:.2rem;text-align:center;}
+.ans-btn{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:.65rem .5rem;color:var(--cream);font-family:'IBM Plex Mono',monospace;font-size:.65rem;cursor:pointer;text-align:center;transition:all .15s;line-height:1.4;min-height:52px;display:flex;align-items:center;justify-content:center;}
+.ans-btn:hover:not(:disabled):not(.selected){border-color:var(--border-h);background:rgba(78,205,196,.05);}
+.ans-btn.selected{border-color:var(--teal);background:rgba(78,205,196,.1);color:var(--teal);}
+.ans-btn.correct{border-color:var(--correct);background:rgba(86,192,121,.12);color:#9ee8b8;animation:pulse .4s ease;}
+.ans-btn.wrong{border-color:var(--wrong);background:rgba(224,85,85,.1);color:#f0a0a0;animation:shk .35s ease;}
+.ans-btn.reveal{opacity:.3;}
+.ans-btn:disabled{cursor:default;}
+.ans-btn .latin{font-size:.58rem;color:var(--muted2);display:block;margin-top:.2rem;font-style:italic;}
+
+/* SCORE DISPLAY on ans */
+.score-pop{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.5rem;font-weight:700;pointer-events:none;animation:scorePop .6s ease forwards;opacity:0;}
+
+/* FEEDBACK */
+.feedback{border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.9rem;display:none;}
+.feedback.show{display:block;animation:fu .3s ease both;}
+.feedback.fb-correct{background:rgba(86,192,121,.08);border:1px solid rgba(86,192,121,.2);}
+.feedback.fb-partial{background:rgba(247,201,72,.07);border:1px solid rgba(247,201,72,.2);}
+.feedback.fb-wrong{background:rgba(224,85,85,.07);border:1px solid rgba(224,85,85,.18);}
+.fb-title{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;margin-bottom:.4rem;}
+.fb-correct .fb-title{color:var(--correct);}
+.fb-partial .fb-title{color:var(--partial);}
+.fb-wrong .fb-title{color:var(--wrong);}
+.fb-body{font-size:.74rem;color:var(--cream);line-height:1.65;}
+.fb-body strong{color:var(--gold);}
+.fb-body em{color:var(--muted2);font-style:italic;}
+.fb-correct-answer{margin-top:.5rem;font-size:.68rem;color:var(--muted2);}
+.fb-correct-answer span{color:var(--teal);}
+
+/* NEXT */
+.next-btn{width:100%;background:linear-gradient(135deg,var(--teal-dim),var(--teal));border:none;border-radius:9px;padding:.9rem;color:#07090e;font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;display:none;box-shadow:0 4px 20px rgba(78,205,196,.2);}
+.next-btn.show{display:block;animation:fu .3s .1s ease both;}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(78,205,196,.3);}
+
+/* SPLASH */
+.splash{text-align:center;padding:1.5rem 0;}
+.splash-icon{font-size:3.5rem;display:block;margin-bottom:.8rem;filter:drop-shadow(0 0 16px rgba(78,205,196,.3));}
+.splash h2{font-family:'Libre Baskerville',serif;font-size:2rem;font-weight:700;color:var(--white);margin-bottom:.5rem;}
+.splash p{font-size:.72rem;color:var(--muted2);line-height:1.75;max-width:420px;margin:0 auto 1.5rem;}
+.start-btn{background:linear-gradient(135deg,var(--teal-dim),var(--teal));border:none;border-radius:11px;padding:1rem 2.2rem;color:#07090e;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s;box-shadow:0 4px 24px rgba(78,205,196,.25);}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(78,205,196,.35);}
+
+/* RESULT */
+.result{text-align:center;padding:1.5rem 0;display:none;}
+.result.show{display:block;animation:fu .5s ease both;}
+.res-icon{font-size:3rem;margin-bottom:.6rem;}
+.res-score{font-family:'Libre Baskerville',serif;font-size:4rem;color:var(--gold);line-height:1;margin-bottom:.2rem;}
+.res-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;}
+.breakdown{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.2rem;text-align:left;max-height:260px;overflow-y:auto;}
+.bd-row{display:flex;justify-content:space-between;align-items:flex-start;padding:.38rem 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:.68rem;gap:.5rem;}
+.bd-row:last-child{border-bottom:none;}
+.bd-herb{color:var(--cream);flex:1;font-style:italic;}
+.bd-pts{font-size:.7rem;font-weight:500;}
+.bd-3{color:var(--correct);}
+.bd-2{color:var(--teal);}
+.bd-1{color:var(--partial);}
+.bd-0{color:var(--wrong);}
+.restart-btn{width:100%;background:var(--s1);border:1px solid var(--border-h);border-radius:9px;padding:.85rem;color:var(--teal);font-family:'IBM Plex Mono',monospace;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:.6rem;}
+.restart-btn:hover{background:rgba(78,205,196,.07);transform:translateY(-1px);}
+.exit-btn{background:transparent;border:1px solid rgba(224,85,85,.25);border-radius:6px;padding:.3rem .6rem;color:rgba(224,85,85,.6);font-family:"IBM Plex Mono",monospace;font-size:.58rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.exit-btn:hover{border-color:var(--wrong);color:var(--wrong);}
+
+/* HIGH SCORES */
+.scores-panel .section-hdr{font-family:'Libre Baskerville',serif;font-size:1.6rem;color:var(--white);margin-bottom:.3rem;}
+.scores-panel .section-sub{font-size:.6rem;color:var(--muted);letter-spacing:.1em;margin-bottom:1.2rem;}
+.score-grid{display:grid;gap:.5rem;}
+.score-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;}
+.sc-name{font-size:.72rem;color:var(--cream);text-transform:capitalize;}
+.sc-dot{width:8px;height:8px;border-radius:50%;margin-right:.5rem;display:inline-block;}
+.sc-best{font-family:'Libre Baskerville',serif;font-size:1.6rem;color:var(--gold);}
+.sc-best-label{font-size:.55rem;color:var(--muted);letter-spacing:.1em;}
+.sc-played{font-size:.6rem;color:var(--muted);}
+.clear-btn{width:100%;background:transparent;border:1px solid rgba(224,85,85,.2);border-radius:8px;padding:.7rem;color:rgba(224,85,85,.6);font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:1rem;}
+.clear-btn:hover{border-color:var(--wrong);color:var(--wrong);}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--s1);}
+::-webkit-scrollbar-thumb{background:var(--teal-dim);border-radius:2px;}
+
+/* ANIMATIONS */
+@keyframes fd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+@keyframes shk{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-4px)}50%{transform:translateX(4px)}}
+@keyframes scorePop{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}60%{opacity:1;transform:translate(-50%,-80%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="app">
+
+<div class="hdr">
+  <div class="hdr-eyebrow">Materia Medica</div>
+  <div class="hdr-title">Herba<span>rium</span></div>
+  <div class="hdr-sub">Clinical Practice Quiz</div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showPanel('quiz',this)">🌿 Quiz</button>
+  <button class="nav-btn" onclick="showPanel('scores',this)">🏆 High Scores</button>
+</div>
+
+<!-- QUIZ PANEL -->
+<div class="panel active" id="panel-quiz">
+
+  <div id="splash">
+    <div class="splash">
+      <span class="splash-icon">🌿</span>
+      <h2>Clinical Scenarios</h2>
+      <p>A client presents. Match the herb, its action, and its common name. Three correct answers per question. Learn by doing.</p>
+      <div style="margin-bottom:1.5rem;">
+        <div class="cat-row" style="justify-content:center;" id="splash-cats">
+          <div class="cat-pill active" data-cat="all" onclick="selectCat(this)">All</div>
+          <div class="cat-pill" data-cat="immune" onclick="selectCat(this)">Immune</div>
+          <div class="cat-pill" data-cat="gut" onclick="selectCat(this)">Gut</div>
+          <div class="cat-pill" data-cat="skin" onclick="selectCat(this)">Skin</div>
+          <div class="cat-pill" data-cat="stress" onclick="selectCat(this)">Stress/Mood</div>
+          <div class="cat-pill" data-cat="pain" onclick="selectCat(this)">Pain</div>
+          <div class="cat-pill" data-cat="respiratory" onclick="selectCat(this)">Respiratory</div>
+          <div class="cat-pill" data-cat="hormonal" onclick="selectCat(this)">Hormonal</div>
+          <div class="cat-pill" data-cat="mushrooms" onclick="selectCat(this)">🍄 Mushrooms</div>
+        </div>
+        <div class="mode-row" style="margin-top:.8rem;">
+          <button class="mode-btn active" id="mb-study" onclick="setMode('study')">📖 Study</button>
+          <button class="mode-btn" id="mb-timed" onclick="setMode('timed')">⏱ Timed</button>
+        </div>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Begin →</button>
+    </div>
+  </div>
+
+  <div id="quiz-ui" style="display:none;">
+    <div class="stats">
+      <div class="stat"><div class="stat-v" id="q-score">0</div><div class="stat-l">Score</div></div>
+      <div class="stat"><div class="stat-v t" id="q-streak">0</div><div class="stat-l">Streak 🔥</div></div>
+      <div class="stat"><div class="stat-v" id="q-prog">0/10</div><div class="stat-l">Progress</div></div>
+      <div class="stat"><div class="stat-v" id="q-acc">—</div><div class="stat-l">Accuracy</div></div>
+      <div class="stat"><button class="exit-btn" onclick="exitQuiz()">✕ Exit</button></div>
+    </div>
+    <div class="timer-wrap" id="timer-wrap">
+      <div class="timer-fill" id="timer-fill" style="width:100%"></div>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+    <div class="scenario-card" id="sc-card">
+      <div class="sc-eyebrow">
+        <span class="sc-cat" id="sc-cat-pill">Immune</span>
+        <span class="sc-qnum" id="sc-qnum">Q1</span>
+      </div>
+      <div class="sc-text" id="sc-text">Loading...</div>
+    </div>
+
+    <div class="answer-grid" id="answer-grid">
+      <div class="answer-col">
+        <div class="answer-col-label">Latin Name</div>
+        <div id="col-latin"></div>
+      </div>
+      <div class="answer-col">
+        <div class="answer-col-label">Action</div>
+        <div id="col-action"></div>
+      </div>
+      <div class="answer-col">
+        <div class="answer-col-label">Common Name</div>
+        <div id="col-common"></div>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <div class="fb-title" id="fb-title"></div>
+      <div class="fb-body" id="fb-body"></div>
+      <div class="fb-correct-answer" id="fb-correct"></div>
+    </div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">Next →</button>
+  </div>
+
+  <div class="result" id="result">
+    <div class="res-icon" id="res-icon">🌿</div>
+    <div class="res-score" id="res-score">0/30</div>
+    <div class="res-label" id="res-label">Session Complete</div>
+    <div class="breakdown" id="breakdown"></div>
+    <button class="restart-btn" onclick="restartQuiz()">Play Again ↺</button>
+    <button class="restart-btn" style="color:var(--muted2);border-color:var(--border);" onclick="goSplash()">Change Category</button>
+  </div>
+
+</div>
+
+<!-- SCORES PANEL -->
+<div class="panel" id="panel-scores">
+  <div class="scores-panel">
+    <div class="section-hdr">High Scores</div>
+    <div class="section-sub">Best score per category · Retained across sessions</div>
+    <div class="score-grid" id="score-grid"></div>
+    <button class="clear-btn" onclick="clearScores()">Reset All Scores</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// =====================================================
+// QUESTION DATABASE
+// =====================================================
+const QUESTIONS = [
+// ===== RESPIRATORY =====
+{
+  cat:'respiratory',
+  scenario:"A client presents with a loose, rattling, productive cough with thick yellow-green mucus. They feel run down and the cough has persisted for three weeks.",
+  latin:'Inula helenium', action:'Expectorant / Antimicrobial', common:'Elecampane',
+  feedback:"Elecampane is specific for chronic, infected respiratory conditions. The yellow-green mucus signals infection — Elecampane combines expectorant action with strong antimicrobial activity against respiratory pathogens. Mullein would suit a dry, irritated cough; Thyme a more acute infected cough.",
+  distractors:{latin:['Verbascum thapsus','Thymus vulgaris','Althaea officinalis'],action:['Demulcent','Nervine sedative','Anti-inflammatory'],common:['Mullein','Thyme','Marshmallow']}
+},
+{
+  cat:'respiratory',
+  scenario:"A client has a spasmodic, dry, barking cough that comes in violent fits, worse at night. It started after a cold three weeks ago. They describe it as exhausting.",
+  latin:'Althaea officinalis', action:'Demulcent', common:'Marshmallow',
+  feedback:"The key clues are dry, barking, and post-viral. The tissue is raw and inflamed — it needs coating above all else. Marshmallow root lines and soothes the entire respiratory tract, calming the irritation that triggers the spasm. Treat the cause of the spasm, not just the spasm.",
+  distractors:{latin:['Inula helenium','Thymus vulgaris','Lobelia inflata'],action:['Expectorant','Antispasmodic','Antimicrobial'],common:['Elecampane','Thyme','Lobelia']}
+},
+{
+  cat:'respiratory',
+  scenario:"A client presents with a wet productive cough, sinusitis, and thick catarrh that won't clear. They feel congested from head to chest. Has had this for two weeks.",
+  latin:'Thymus vulgaris', action:'Expectorant / Antimicrobial', common:'Thyme',
+  feedback:"Thyme is rich in thymol — a potent antimicrobial that specifically targets respiratory pathogens while simultaneously acting as an expectorant. The combination of sinus and chest congestion with thick catarrh points to an active infection needing both clearance and antimicrobial action.",
+  distractors:{latin:['Grindelia camporum','Althaea officinalis','Hyssopus officinalis'],action:['Demulcent','Antispasmodic','Anticatarrhal'],common:['Grindelia','Marshmallow','Hyssop']}
+},
+{
+  cat:'respiratory',
+  scenario:"A client with a history of asthma presents with tight, wheezy breathing and a dry spasmodic cough. No infection signs. Worse from cold air and anxiety.",
+  latin:'Lobelia inflata', action:'Antispasmodic / Bronchodilator', common:'Lobelia',
+  feedback:"Lobelia is the most powerful respiratory antispasmodic in Western herbalism. It directly relaxes bronchial smooth muscle and opens constricted airways. The absence of infection and the spasmodic, anxiety-linked pattern is the classic Lobelia picture. Use carefully — dose-specific herb.",
+  distractors:{latin:['Inula helenium','Althaea officinalis','Hyssopus officinalis'],action:['Expectorant','Demulcent','Diaphoretic'],common:['Elecampane','Marshmallow','Hyssop']}
+},
+{
+  cat:'respiratory',
+  scenario:"A client presents with a cold in its first 24 hours — chills, fever, sore throat just starting. They want to sweat it out and support their immune response acutely.",
+  latin:'Sambucus nigra flos', action:'Diaphoretic / Antiviral', common:'Elder Flower',
+  feedback:"Elder Flower is the premier diaphoretic for early-stage colds and fevers. It opens the pores, supports the fever response, and has antiviral activity. At this early stage with fever and chills, you want to support the body's innate response — not suppress it. Elder berry would come in if the virus is more established.",
+  distractors:{latin:['Echinacea purpurea','Andrographis paniculata','Euphrasia officinalis'],action:['Immunostimulant','Antimicrobial','Astringent'],common:['Echinacea','Andrographis','Eyebright']}
+},
+{
+  cat:'respiratory',
+  scenario:"A client has hay fever — streaming eyes, sneezing, runny nose, worse in summer. They react badly to antihistamines and want a herbal approach.",
+  latin:'Euphrasia officinalis', action:'Anticatarrhal / Astringent', common:'Eyebright',
+  feedback:"Eyebright is specific for upper respiratory and eye catarrh driven by allergic response. Its astringent action reduces excess mucous secretion and soothes inflamed membranes. It would combine well with Nettle (antiallergic) and Elder Flower (anticatarrhal) in a formula for hay fever.",
+  distractors:{latin:['Althaea officinalis','Sambucus nigra flos','Galium aparine'],action:['Demulcent','Diaphoretic','Lymphatic'],common:['Marshmallow','Elder Flower','Cleavers']}
+},
+
+// ===== IMMUNE =====
+{
+  cat:'immune',
+  scenario:"A client comes in at the very start of a cold — scratchy throat, slight chills, just feeling something coming on. Onset was this morning. They want to stop it in its tracks.",
+  latin:'Echinacea purpurea', action:'Immunostimulant', common:'Echinacea',
+  feedback:"Echinacea is the classic acute onset herb, most effective at the very first sign of illness. It rapidly activates immune cells — phagocytosis, NK cells, macrophage activity. Astragalus would be wrong here; it's a long-term tonic, not for acute activation. Best used at onset and for no longer than 2 weeks.",
+  distractors:{latin:['Astragalus membranaceus','Andrographis paniculata','Ganoderma lucidum'],action:['Immunomodulator','Adaptogen','Antiviral'],common:['Astragalus','Andrographis','Reishi']}
+},
+{
+  cat:'immune',
+  scenario:"A client has recurring mouth ulcers, inflamed gums, and a history of frequent minor infections. They work long hours, eat poorly, and are under chronic stress.",
+  latin:'Propolis', action:'Antimicrobial', common:'Propolis',
+  feedback:"Propolis has exceptional affinity for oral mucosa specifically — used clinically for mouth ulcers, infected gums, and oral infections. It is both antimicrobial and locally immunostimulant. Myrrh would also work for the mouth, but Propolis better addresses the recurring infection picture alongside the oral presentation.",
+  distractors:{latin:['Commiphora myrrha','Calendula officinalis','Hydrastis canadensis'],action:['Vulnerary','Astringent','Bitter tonic'],common:['Myrrh','Calendula','Goldenseal']}
+},
+{
+  cat:'immune',
+  scenario:"A client has had flu for three days — fever, aching, exhausted. The virus is clearly established. They want something to shorten the duration and reduce severity.",
+  latin:'Sambucus nigra', action:'Antiviral', common:'Elderberry',
+  feedback:"Once a virus is established, Elderberry is the specific choice. Anthocyanins in Elderberry directly inhibit viral replication and neuraminidase, the enzyme viruses use to enter cells. Clinical evidence shows reduced duration of flu. At this stage — virus active for 3 days — you need antiviral action, not just immune stimulation.",
+  distractors:{latin:['Echinacea purpurea','Andrographis paniculata','Astragalus membranaceus'],action:['Immunostimulant','Antimicrobial','Adaptogen'],common:['Echinacea','Andrographis','Astragalus']}
+},
+{
+  cat:'immune',
+  scenario:"A client in remission from cancer wants to support their immune system long-term. They are not currently ill but want deep immune resilience over months.",
+  latin:'Ganoderma lucidum', action:'Immunomodulator / Adaptogen', common:'Reishi',
+  feedback:"Reishi is one of the most researched immunomodulators for long-term immune support. Its triterpenes and beta-glucans modulate — not just stimulate — immune activity, making it appropriate for cancer patients where immune balance matters. It also protects the liver and is deeply adaptogenic. Echinacea would be inappropriate here — it stimulates acutely, not for long-term use.",
+  distractors:{latin:['Echinacea purpurea','Astragalus membranaceus','Andrographis paniculata'],action:['Immunostimulant','Antimicrobial','Anti-inflammatory'],common:['Echinacea','Astragalus','Andrographis']}
+},
+{
+  cat:'immune',
+  scenario:"A client presents with acute bronchitis — significant infection, thick mucus, productive cough, moderate fever. A conventional antimicrobial herb is needed.",
+  latin:'Andrographis paniculata', action:'Antimicrobial / Immunostimulant', common:'Andrographis',
+  feedback:"Andrographis is one of the most potent herbal antimicrobials with strong clinical evidence for acute respiratory infections. It strongly activates innate immunity and directly inhibits respiratory pathogens. Clinical trials show it reduces severity and duration of acute respiratory infections comparably to some conventional treatments.",
+  distractors:{latin:['Echinacea purpurea','Thymus vulgaris','Propolis'],action:['Immunomodulator','Expectorant','Antiviral'],common:['Echinacea','Thyme','Propolis']}
+},
+
+// ===== GUT =====
+{
+  cat:'gut',
+  scenario:"A client presents with bloating, cramping, and loose stools that are clearly worse during periods of stress and anxiety. They describe their digestion as nervous.",
+  latin:'Matricaria chamomilla', action:'Carminative / Antispasmodic', common:'Chamomile',
+  feedback:"Chamomile sits precisely at the gut-nervous system axis — it relaxes intestinal smooth muscle, relieves spasm and gas, and simultaneously calms the nervous system driving the symptoms. The stress-triggered pattern is the key clinical clue. Gentian would be wrong — stimulating bitter secretions into an irritated, loose gut worsens things.",
+  distractors:{latin:['Gentiana lutea','Zingiber officinale','Mentha piperita'],action:['Bitter tonic','Laxative','Cholagogue'],common:['Gentian','Ginger','Peppermint']}
+},
+{
+  cat:'gut',
+  scenario:"A client presents with indigestion, bloating after meals, and a feeling of fullness after only small amounts. They have a sluggish appetite and digestion that feels slow and heavy.",
+  latin:'Gentiana lutea', action:'Bitter tonic', common:'Gentian',
+  feedback:"Poor appetite, fullness after small amounts, and heavy digestion signals insufficient digestive secretions — HCl, bile, and enzymes are all low. Gentian is the most potent bitter tonic we have, stimulating the entire digestive cascade via bitter taste receptors. Ginger would support but doesn't address the root insufficiency.",
+  distractors:{latin:['Zingiber officinale','Matricaria chamomilla','Cynara scolymus'],action:['Carminative','Antispasmodic','Cholagogue'],common:['Ginger','Chamomile','Globe Artichoke']}
+},
+{
+  cat:'gut',
+  scenario:"A client has IBS with alternating constipation and diarrhoea, significant bloating, and cramping. Their stools are unpredictable. No obvious stress trigger — mainly after eating.",
+  latin:'Mentha piperita', action:'Antispasmodic / Carminative', common:'Peppermint',
+  feedback:"Peppermint directly relaxes smooth muscle of the GI tract via calcium channel antagonism. Enteric-coated peppermint oil is one of the best evidenced herbal treatments for IBS. The unpredictable pattern with post-meal bloating and cramping without a clear stress link points toward smooth muscle dysfunction rather than nervous gut.",
+  distractors:{latin:['Matricaria chamomilla','Foeniculum vulgare','Zingiber officinale'],action:['Nervine','Bitter tonic','Diaphoretic'],common:['Chamomile','Fennel','Ginger']}
+},
+{
+  cat:'gut',
+  scenario:"A client presents with heartburn, acid reflux, and a burning sensation in the stomach. They have been on PPIs previously. The stomach lining feels raw and irritated.",
+  latin:'Althaea officinalis', action:'Demulcent / Antacid', common:'Marshmallow',
+  feedback:"For a raw, irritated, acid-damaged stomach lining, demulcent action is the priority. Marshmallow root forms a protective mucilaginous coating over inflamed mucosa, allowing healing to occur. Unlike Meadowsweet which has salicylates and anti-inflammatory action, Marshmallow directly coats and protects the damaged tissue.",
+  distractors:{latin:['Filipendula ulmaria','Matricaria chamomilla','Glycyrrhiza glabra'],action:['Anti-inflammatory','Carminative','Bitter tonic'],common:['Meadowsweet','Chamomile','Licorice']}
+},
+{
+  cat:'gut',
+  scenario:"A client has a sluggish liver, mild jaundice, poor fat digestion, and constipation. They drink alcohol regularly and have noticed their digestion has worsened over the past year.",
+  latin:'Cynara scolymus', action:'Cholagogue / Hepatoprotective', common:'Globe Artichoke',
+  feedback:"Poor fat digestion, sluggish liver, and constipation all point to insufficient bile production and flow. Globe Artichoke stimulates bile production and flow strongly, while also protecting and regenerating liver cells. The alcohol history makes hepatoprotective action essential alongside the digestive support.",
+  distractors:{latin:['Silybum marianum','Taraxacum officinale radix','Berberis vulgaris'],action:['Hepatoprotective','Bitter tonic','Antimicrobial'],common:['Milk Thistle','Dandelion Root','Barberry']}
+},
+{
+  cat:'gut',
+  scenario:"A client is a heavy drinker and is concerned about liver damage. Liver enzymes are elevated. They want to protect and support liver regeneration.",
+  latin:'Silybum marianum', action:'Hepatoprotective', common:'Milk Thistle',
+  feedback:"Milk Thistle is the definitive hepatoprotective herb. Silymarin prevents hepatotoxin entry into liver cells by competing for uptake receptors, and stimulates liver cell regeneration via protein synthesis. It is the most researched and evidenced herb for liver protection. No other herb matches its specificity for this presentation.",
+  distractors:{latin:['Cynara scolymus','Bupleurum falcatum','Taraxacum officinale radix'],action:['Cholagogue','Adaptogen','Bitter tonic'],common:['Globe Artichoke','Bupleurum','Dandelion Root']}
+},
+
+// ===== SKIN =====
+{
+  cat:'skin',
+  scenario:"A client has chronic dry, intensely itchy eczema on the backs of their hands and inner elbows. It flares with stress and they have a history of sluggish digestion and constipation.",
+  latin:'Arctium lappa', action:'Alterative', common:'Burdock',
+  feedback:"Chronic skin disease with constipation and sluggish digestion is a classic alterative picture. The skin is a secondary elimination organ — when the gut and liver are sluggish, the skin takes up the slack. Burdock cleans the blood, lymph, and liver simultaneously. Calendula would only treat the skin externally — missing the root cause entirely.",
+  distractors:{latin:['Calendula officinalis','Urtica dioica','Stellaria media'],action:['Vulnerary','Nutritive','Antipruritic'],common:['Calendula','Nettle','Chickweed']}
+},
+{
+  cat:'skin',
+  scenario:"A client has an acutely inflamed wound that is slow to heal, slightly infected, and weeping. They want a topical herb to apply directly.",
+  latin:'Calendula officinalis', action:'Vulnerary / Antimicrobial', common:'Calendula',
+  feedback:"Calendula is the foremost topical wound healer in Western herbalism. It simultaneously heals tissue (vulnerary), reduces inflammation, and inhibits infection (antimicrobial). It is specifically indicated for slow-healing, slightly infected wounds. Safe on all skin types and appropriate for open wounds.",
+  distractors:{latin:['Stellaria media','Hypericum perforatum','Arctium lappa'],action:['Antipruritic','Analgesic','Alterative'],common:['Chickweed','St John\'s Wort','Burdock']}
+},
+{
+  cat:'skin',
+  scenario:"A client has intensely itchy hives and mild eczema with a clear allergic component. They also suffer from seasonal hay fever. The itching is the main complaint.",
+  latin:'Urtica dioica', action:'Antiallergic / Nutritive', common:'Nettle',
+  feedback:"Nettle reduces histamine response and stabilises mast cells, addressing the allergic root of the condition. It also provides iron and minerals that support overall tissue health. The concurrent hay fever confirms an allergic constitution — Nettle addresses this systemically rather than just treating the skin symptom.",
+  distractors:{latin:['Stellaria media','Calendula officinalis','Viola tricolor'],action:['Antipruritic','Vulnerary','Alterative'],common:['Chickweed','Calendula','Viola']}
+},
+{
+  cat:'skin',
+  scenario:"A client has a chronic dry, itchy, scaly skin condition — not infected, just persistently irritated and inflamed. They want topical soothing relief.",
+  latin:'Stellaria media', action:'Demulcent / Antipruritic', common:'Chickweed',
+  feedback:"Chickweed is specifically cooling and soothing for dry, itchy skin conditions. Applied as a poultice or cream it dramatically reduces itch and inflammation without the antimicrobial action that would be needed for infected skin. Its cooling energetics make it ideal for hot, irritated, non-infected skin conditions.",
+  distractors:{latin:['Calendula officinalis','Arctium lappa','Urtica dioica'],action:['Vulnerary','Alterative','Anti-inflammatory'],common:['Calendula','Burdock','Nettle']}
+},
+{
+  cat:'skin',
+  scenario:"A client has chronic acne, oily skin, and a history of constipation and poor diet. The acne is deep, cystic, and has been present for years.",
+  latin:'Galium aparine', action:'Lymphatic / Alterative', common:'Cleavers',
+  feedback:"Deep cystic acne with constipation and a long history points to lymphatic congestion and poor elimination. Cleavers is a premier lymph mover and alterative, clearing the congestion that drives cystic acne from within. Calendula would only address the surface. The long history and cystic nature confirm an internal rather than topical approach is primary.",
+  distractors:{latin:['Calendula officinalis','Arctium lappa','Berberis aquifolium'],action:['Vulnerary','Bitter tonic','Antimicrobial'],common:['Calendula','Burdock','Oregon Grape']}
+},
+
+// ===== STRESS / MOOD =====
+{
+  cat:'stress',
+  scenario:"A client is exhausted, wired but tired, struggles to switch off at night, and has been running on adrenaline for months. They feel burnt out but cannot relax even when they try.",
+  latin:'Withania somnifera', action:'Adaptogen', common:'Ashwagandha',
+  feedback:"Wired but tired is HPA axis dysregulation — not simple anxiety or insomnia. Ashwagandha specifically regulates cortisol, rebuilds adrenal reserve, and calms without sedating. Valerian or Passionflower would sedate but not address the underlying adrenal exhaustion that is driving the pattern. Ashwagandha is the lead, sedatives may support the formula.",
+  distractors:{latin:['Valeriana officinalis','Scutellaria lateriflora','Passiflora incarnata'],action:['Nervine sedative','Anxiolytic','Hypnotic'],common:['Valerian','Skullcap','Passionflower']}
+},
+{
+  cat:'stress',
+  scenario:"A client presents with low mood, emotional flatness, and disconnection following prolonged grief. They are not severely depressed. Sleep is okay, appetite is low. They feel joyless.",
+  latin:'Rosa damascena', action:'Nervine / Antidepressant', common:'Rose',
+  feedback:"Grief and emotional flatness after loss is not clinical depression — it is a heart wound. Rose is the herb of the heart in both Western and Eastern traditions, specifically for grief, emotional numbness, and disconnection. St John's Wort would suit clinical depression with disturbed sleep and persistent low mood. Not every low mood needs an antidepressant herb.",
+  distractors:{latin:['Hypericum perforatum','Melissa officinalis','Lavandula angustifolia'],action:['Antidepressant','Carminative','Antispasmodic'],common:['St John\'s Wort','Lemon Balm','Lavender']}
+},
+{
+  cat:'stress',
+  scenario:"A client has persistent mild to moderate depression — low mood for over 6 weeks, poor sleep, low energy, and reduced interest in activities. No suicidal ideation.",
+  latin:'Hypericum perforatum', action:'Antidepressant', common:'St John\'s Wort',
+  feedback:"St John's Wort has the strongest clinical evidence of any herbal antidepressant for mild to moderate depression. Hypericin and hyperforin modulate serotonin, dopamine, and GABA receptors. The 6-week duration with disturbed sleep and loss of interest confirms this is clinical depression, not situational sadness — the difference that makes Hypericum rather than Rose the right choice.",
+  distractors:{latin:['Rosa damascena','Melissa officinalis','Avena sativa'],action:['Nervine','Anxiolytic','Nutritive'],common:['Rose','Lemon Balm','Oat Straw']}
+},
+{
+  cat:'stress',
+  scenario:"A client has racing thoughts at bedtime, anxiety that prevents sleep onset, and a mind that won't switch off. They are not depressed, just mentally hyperactive at night.",
+  latin:'Passiflora incarnata', action:'Nervine sedative / Anxiolytic', common:'Passionflower',
+  feedback:"Passionflower is specifically indicated for anxiety with racing thoughts and sleep onset insomnia. It modulates GABA receptors to quiet mental hyperactivity without heavy sedation. The absence of depression and the specific racing-thought pattern at night distinguishes this from a Valerian or Ashwagandha picture.",
+  distractors:{latin:['Valeriana officinalis','Withania somnifera','Humulus lupulus'],action:['Hypnotic','Adaptogen','Bitter tonic'],common:['Valerian','Ashwagandha','Hops']}
+},
+{
+  cat:'stress',
+  scenario:"A client presents with anxiety, tension, muscle tightness across the shoulders and jaw, and digestive symptoms that appear when stressed. They describe themselves as a perfectionist who cannot switch off.",
+  latin:'Verbena officinalis', action:'Nervine tonic / Antispasmodic', common:'Vervain',
+  feedback:"Vervain is a classic herb for the tense, driven, perfectionist type — the person who holds stress physically as muscle tension and whose digestion suffers under pressure. It releases held tension, moves liver qi, and restores nervous system balance. Wood Betony would also be valid here — both suit this picture.",
+  distractors:{latin:['Scutellaria lateriflora','Passiflora incarnata','Valeriana officinalis'],action:['Anxiolytic','Nervine sedative','Hypnotic'],common:['Skullcap','Passionflower','Valerian']}
+},
+{
+  cat:'stress',
+  scenario:"A client is a university student with exam anxiety — acute nervous tension, palpitations, and restlessness. They need something calming but not sedating during the day.",
+  latin:'Scutellaria lateriflora', action:'Nervine tonic / Anxiolytic', common:'Skullcap',
+  feedback:"Skullcap restores and nourishes an over-taxed nervous system without sedating — crucial for a student who still needs to function and study. It reduces anxiety and nervous tension while maintaining alertness. Valerian or Hops would sedate and impair cognitive function. Skullcap is the daytime anxiety herb.",
+  distractors:{latin:['Valeriana officinalis','Humulus lupulus','Passiflora incarnata'],action:['Hypnotic','Nervine sedative','Adaptogen'],common:['Valerian','Hops','Passionflower']}
+},
+
+// ===== PAIN =====
+{
+  cat:'pain',
+  scenario:"A client has lower back pain and stiff aching joints that are worse in the morning and improve with gentle movement throughout the day. The pain has been building for two years.",
+  latin:'Harpagophytum procumbens', action:'Anti-inflammatory / Antirheumatic', common:'Devil\'s Claw',
+  feedback:"Chronic, morning-worse, movement-improving joint pain is classic inflammatory arthritis. Devil's Claw harpagosides inhibit prostaglandin synthesis comparably to NSAIDs in clinical trials for osteoarthritis and lower back pain. Willow suits acute pain; Devil's Claw addresses the chronic inflammatory root. Duration and morning stiffness are the critical clues.",
+  distractors:{latin:['Salix alba','Viburnum opulus','Boswellia serrata'],action:['Analgesic','Antispasmodic','Vulnerary'],common:['White Willow','Cramp Bark','Boswellia']}
+},
+{
+  cat:'pain',
+  scenario:"A client has muscle spasm and cramping in the lower back after lifting — acute onset, the muscles are visibly tense and knotted. No joint involvement.",
+  latin:'Viburnum opulus', action:'Antispasmodic', common:'Cramp Bark',
+  feedback:"Acute muscle spasm without joint involvement is the specific picture for Cramp Bark. It is the most potent smooth and skeletal muscle antispasmodic in Western herbalism. Devil's Claw would be more appropriate for chronic inflammatory joint pain. Cramp Bark suits the acute, muscular, knotted presentation.",
+  distractors:{latin:['Harpagophytum procumbens','Salix alba','Piscidia erythrina'],action:['Anti-inflammatory','Analgesic','Nervine sedative'],common:['Devil\'s Claw','White Willow','Jamaica Dogwood']}
+},
+{
+  cat:'pain',
+  scenario:"A client has severe menstrual cramping — sharp, spasmodic pain that starts 24 hours before bleeding and lasts through the first two days. It is debilitating.",
+  latin:'Piscidia erythrina', action:'Antispasmodic / Analgesic', common:'Jamaica Dogwood',
+  feedback:"Jamaica Dogwood is a powerful pain-relieving antispasmodic specifically indicated for spasmodic pain — particularly dysmenorrhoea. It works on both the smooth muscle spasm and the pain pathway. More potent than Cramp Bark for this level of severity. The debilitating, spasmodic, cyclic nature is the defining clinical picture.",
+  distractors:{latin:['Viburnum opulus','Dioscorea villosa','Salix alba'],action:['Nervine sedative','Carminative','Anti-inflammatory'],common:['Cramp Bark','Wild Yam','White Willow']}
+},
+{
+  cat:'pain',
+  scenario:"A client has a tension headache — band-like pressure around the head, worse at the end of the workday, associated with tight neck and shoulder muscles and stress.",
+  latin:'Lavandula angustifolia', action:'Nervine / Antispasmodic', common:'Lavender',
+  feedback:"Tension headaches driven by stress and muscle tension respond to nervine and antispasmodic action — not just analgesics. Lavender applied topically to the temples relieves tension headache pain and the underlying nervous tension. Feverfew is for migraines (vascular), not tension headaches. The band-like pattern and stress association are the distinguishing clues.",
+  distractors:{latin:['Tanacetum parthenium','Salix alba','Verbena officinalis'],action:['Anti-inflammatory','Analgesic','Bitter tonic'],common:['Feverfew','White Willow','Vervain']}
+},
+{
+  cat:'pain',
+  scenario:"A client has a history of migraines — pulsating unilateral headaches with visual aura, nausea, and photophobia. They want prevention, not just acute relief.",
+  latin:'Tanacetum parthenium', action:'Anti-inflammatory / Platelet inhibitor', common:'Feverfew',
+  feedback:"Feverfew is the specific herbal preventive for migraines. Parthenolide inhibits platelet aggregation and prostaglandin synthesis, reducing the vascular inflammation underlying migraines. It must be taken consistently for prevention — not just at onset. The aura and pulsating unilateral pattern confirm migraine rather than tension headache.",
+  distractors:{latin:['Salix alba','Lavandula angustifolia','Viburnum opulus'],action:['Analgesic','Nervine','Antispasmodic'],common:['White Willow','Lavender','Cramp Bark']}
+},
+{
+  cat:'pain',
+  scenario:"A client has arthritis with systemic inflammation — painful swollen joints, elevated CRP, fatigue, and morning stiffness. They want to reduce the inflammatory burden systemically.",
+  latin:'Boswellia serrata', action:'Anti-inflammatory', common:'Boswellia',
+  feedback:"Boswellia (Frankincense) inhibits 5-LOX, the enzyme producing pro-inflammatory leukotrienes. This makes it particularly effective for systemic inflammatory conditions like rheumatoid arthritis where leukotriene pathways are prominent. It reduces swelling and pain without GI side effects. Devil's Claw targets COX pathways and is better for osteoarthritis; Boswellia suits the systemic inflammatory picture.",
+  distractors:{latin:['Harpagophytum procumbens','Curcuma longa','Salix alba'],action:['Antirheumatic','Cholagogue','Analgesic'],common:['Devil\'s Claw','Turmeric','White Willow']}
+},
+
+// ===== HORMONAL / REPRODUCTIVE =====
+{
+  cat:'hormonal',
+  scenario:"A client in their late 40s presents with hot flushes, night sweats, irritability, and irregular periods. They want a herbal approach to menopausal transition.",
+  latin:'Cimicifuga racemosa', action:'Phytoestrogenic / Antispasmodic', common:'Black Cohosh',
+  feedback:"Black Cohosh is the most researched herbal remedy for menopausal symptoms, particularly hot flushes. It modulates oestrogen receptors and has antispasmodic and nervine properties. Well supported by clinical trials. Vitex would suit perimenopause with irregular cycles more than established menopause.",
+  distractors:{latin:['Vitex agnus-castus','Angelica sinensis','Trifolium pratense'],action:['Progesterogenic','Emmenagogue','Adaptogen'],common:['Chaste Tree','Dong Quai','Red Clover']}
+},
+{
+  cat:'hormonal',
+  scenario:"A client has severe PMS — irritability, breast tenderness, bloating, and mood swings in the two weeks before menstruation. Symptoms resolve completely once bleeding starts.",
+  latin:'Vitex agnus-castus', action:'Progesterogenic', common:'Chaste Tree',
+  feedback:"The classic Vitex picture — luteal phase symptoms that resolve at menstruation indicate relative progesterone deficiency. Vitex acts on the pituitary via dopamine agonism to raise LH and stimulate progesterone production. It must be taken consistently for 3 months to see full effect. Black Cohosh suits menopausal symptoms, not luteal PMS.",
+  distractors:{latin:['Cimicifuga racemosa','Angelica sinensis','Dioscorea villosa'],action:['Phytoestrogenic','Emmenagogue','Antispasmodic'],common:['Black Cohosh','Dong Quai','Wild Yam']}
+},
+{
+  cat:'hormonal',
+  scenario:"A client has endometriosis with severe cramping, heavy bleeding, and pain that begins several days before menstruation. They find the pain debilitating and want herbal support.",
+  latin:'Dioscorea villosa', action:'Antispasmodic / Anti-inflammatory', common:'Wild Yam',
+  feedback:"Wild Yam combines antispasmodic action on uterine smooth muscle with anti-inflammatory properties, addressing both the cramping and the inflammatory component of endometriosis. For the severity described, it would combine well with Jamaica Dogwood for pain and Vitex long-term to address hormonal driving factors.",
+  distractors:{latin:['Viburnum opulus','Vitex agnus-castus','Piscidia erythrina'],action:['Nervine sedative','Progesterogenic','Analgesic'],common:['Cramp Bark','Chaste Tree','Jamaica Dogwood']}
+},
+{
+  cat:'hormonal',
+  scenario:"A female client in their 30s has irregular, scanty periods, low libido, dry skin, and fatigue. They have a demanding job and poor sleep. Signs of reproductive depletion.",
+  latin:'Asparagus racemosus', action:'Reproductive tonic / Adaptogen', common:'Shatavari',
+  feedback:"Shatavari is the premier Ayurvedic reproductive tonic for women — specifically for depletion, deficiency, and dryness. It nourishes reproductive tissue, supports hormonal balance, improves libido, and acts as a gentle adaptogen. The combination of reproductive and adrenal depletion makes it the lead herb here.",
+  distractors:{latin:['Vitex agnus-castus','Withania somnifera','Angelica sinensis'],action:['Progesterogenic','Nervine tonic','Emmenagogue'],common:['Chaste Tree','Ashwagandha','Dong Quai']}
+},
+// ===== CARDIOVASCULAR =====
+{
+  cat:'pain',
+  scenario:"A client in their 60s has mild heart failure with fatigue on exertion, mild breathlessness, and ankle oedema. They want long-term cardiac support alongside their medication.",
+  latin:'Crataegus oxycanthoi fructus', action:'Cardiotonic / Vasodilator', common:'Hawthorn Berry',
+  feedback:"Hawthorn Berry is the foremost cardiotonic herb — strengthens cardiac muscle contractility, improves coronary blood flow, and mildly reduces peripheral resistance. It is safe for long-term use alongside cardiac medication. The fatigue-on-exertion and oedema picture is classic mild cardiac insufficiency where Hawthorn earns its place.",
+  distractors:{latin:['Convallaria majalis','Leonurus cardiaca','Salvia miltiorrhiza'],action:['Cardiac glycoside','Nervine','Hepatoprotective'],common:['Lily of the Valley','Motherwort','Dan Shen']}
+},
+{
+  cat:'stress',
+  scenario:"A client has anxiety with palpitations — the heart races and flutters with stress. They are otherwise healthy. The cardiac symptoms are clearly anxiety-driven.",
+  latin:'Leonurus cardiaca', action:'Nervine / Cardiotonic', common:'Motherwort',
+  feedback:"Motherwort sits precisely at the heart-nervous system interface — it calms anxiety and simultaneously slows and steadies the heart. Specifically indicated for palpitations and tachycardia driven by anxiety or stress. Hawthorn would suit structural cardiac weakness; Motherwort suits functional palpitations from nervous origin.",
+  distractors:{latin:['Crataegus oxycanthoi fructus','Passiflora incarnata','Valeriana officinalis'],action:['Cardiotonic','Anxiolytic','Hypnotic'],common:['Hawthorn Berry','Passionflower','Valerian']}
+},
+// ===== URINARY =====
+{
+  cat:'gut',
+  scenario:"A client presents with burning urination, urinary frequency, and lower abdominal discomfort. Urine is cloudy. Symptoms consistent with acute cystitis.",
+  latin:'Arctostaphylos uva-ursi', action:'Urinary antiseptic', common:'Uva Ursi',
+  feedback:"Uva Ursi is the specific herb for bacterial cystitis. Arbutin is converted to hydroquinone in alkaline urine, creating a potent urinary antiseptic effect. It must be taken with an alkalinising agent such as bicarbonate of soda to work correctly. Cleavers and Corn Silk would soothe but not address the infection.",
+  distractors:{latin:['Galium aparine','Zea mays','Solidago canadensis'],action:['Lymphatic','Demulcent','Diuretic'],common:['Cleavers','Corn Silk','Goldenrod']}
+},
+{
+  cat:'gut',
+  scenario:"A client has a history of kidney stones and wants to prevent recurrence. They also have mild urinary inflammation and want a soothing, preventive approach.",
+  latin:'Zea mays', action:'Demulcent / Diuretic', common:'Corn Silk',
+  feedback:"Corn Silk soothes inflamed urinary mucosa while gently increasing urine flow, helping to prevent crystal aggregation. It is the ideal preventive and soothing herb for recurrent kidney stones and urinary inflammation. Uva Ursi addresses active infection; Corn Silk suits the ongoing prevention and tissue soothing picture.",
+  distractors:{latin:['Arctostaphylos uva-ursi','Equisetum arvense','Galium aparine'],action:['Urinary antiseptic','Connective tissue tonic','Lymphatic'],common:['Uva Ursi','Horsetail','Cleavers']}
+},
+// ===== LIVER / DETOX =====
+{
+  cat:'gut',
+  scenario:"A client has sluggish digestion, bloating after fatty foods, pale stools, and fatigue. They have a history of gallbladder issues. Bile flow appears to be insufficient.",
+  latin:'Taraxacum officinale radix', action:'Bitter tonic / Cholagogue', common:'Dandelion Root',
+  feedback:"Dandelion Root specifically stimulates both bile production and flow, addresses sluggish liver function, and acts as a gentle prebiotic. The pale stools and poor fat digestion confirm insufficient bile. Dandelion Root is the gentlest and most accessible hepatic bitter, ideal for ongoing support. Cynara would be stronger for active liver disease.",
+  distractors:{latin:['Cynara scolymus','Silybum marianum','Berberis vulgaris'],action:['Hepatoprotective','Antimicrobial','Adaptogen'],common:['Globe Artichoke','Milk Thistle','Barberry']}
+},
+{
+  cat:'skin',
+  scenario:"A client has chronic psoriasis with thick silvery plaques, joint involvement, and a history of constipation and poor detoxification. They have tried topical treatments without success.",
+  latin:'Rumex crispus', action:'Alterative / Hepatic', common:'Yellow Dock',
+  feedback:"Yellow Dock is an iron-rich blood and liver cleanser specifically suited to chronic skin conditions with constipation and poor elimination. Its anthraquinone content gently stimulates bowel motility while its bitter constituents support liver detoxification. The joint involvement and failed topical treatments confirm a deep systemic approach is needed.",
+  distractors:{latin:['Arctium lappa','Galium aparine','Urtica dioica'],action:['Lymphatic','Diuretic','Nutritive'],common:['Burdock','Cleavers','Nettle']}
+},
+// ===== ADAPTOGENS =====
+{
+  cat:'stress',
+  scenario:"A client is a competitive athlete experiencing overtraining syndrome — persistent fatigue, declining performance, poor recovery, and low mood despite adequate sleep.",
+  latin:'Rhodiola rosea', action:'Adaptogen / Antifatigue', common:'Rhodiola',
+  feedback:"Rhodiola is the specific adaptogen for physical and mental performance under stress. It improves oxygen utilisation, reduces exercise-induced stress hormone elevation, and speeds recovery. The declining performance and overtraining picture is its hallmark indication. Ashwagandha suits chronic stress depletion; Rhodiola suits performance and recovery.",
+  distractors:{latin:['Withania somnifera','Eleutherococcus senticosus','Panax ginseng'],action:['Nervine tonic','Immunomodulator','Cognitive tonic'],common:['Ashwagandha','Siberian Ginseng','Panax Ginseng']}
+},
+{
+  cat:'stress',
+  scenario:"A client has long-term chronic fatigue with immune dysfunction — frequent infections, poor energy, brain fog, and a history of viral illness that never fully resolved.",
+  latin:'Eleutherococcus senticosus', action:'Adaptogen / Immunomodulator', common:'Siberian Ginseng',
+  feedback:"Siberian Ginseng is ideal for chronic fatigue with immune compromise — it builds resilience gradually and safely over months without overstimulating. Its eleutherosides support HPA axis regulation and immune modulation simultaneously. Safer than Panax Ginseng for daily long-term use, especially where there is underlying immune dysregulation.",
+  distractors:{latin:['Panax ginseng','Withania somnifera','Ganoderma lucidum'],action:['Cognitive tonic','Nervine tonic','Hepatoprotective'],common:['Panax Ginseng','Ashwagandha','Reishi']}
+},
+{
+  cat:'stress',
+  scenario:"A client in their 50s with high stress, low energy, declining memory, and reduced libido. They want a strengthening tonic. They are a physically active man in generally good health.",
+  latin:'Panax ginseng', action:'Adaptogen / Cognitive tonic', common:'Panax Ginseng',
+  feedback:"Panax Ginseng is the quintessential tonic for the depleted but otherwise healthy active man — it improves physical performance, cognitive function, libido, and stress resilience simultaneously via ginsenoside action on the HPA and HPG axes. It is more stimulating than Siberian or Ashwagandha, appropriate here as the client is active and not deeply exhausted.",
+  distractors:{latin:['Eleutherococcus senticosus','Withania somnifera','Tribulus terrestris'],action:['Immunomodulator','Nervine tonic','Androgenic'],common:['Siberian Ginseng','Ashwagandha','Tribulus']}
+},
+// ===== CONNECTIVE TISSUE / MUSCULOSKELETAL =====
+{
+  cat:'pain',
+  scenario:"A client recovering from surgery wants to support wound healing and scar tissue formation. They also have weak nails and brittle hair. They want a nutritive connective tissue tonic.",
+  latin:'Equisetum arvense', action:'Connective tissue tonic / Nutritive', common:'Horsetail',
+  feedback:"Horsetail is the highest plant source of bioavailable silica, essential for collagen cross-linking, connective tissue repair, and the integrity of hair, nails, and bones. The combination of post-surgical healing and weak nails points directly to silicon deficiency. Gotu Kola would also suit wound healing but Horsetail better addresses the nutritive connective tissue picture.",
+  distractors:{latin:['Centella asiatica','Calendula officinalis','Urtica dioica'],action:['Vulnerary','Anti-inflammatory','Nutritive'],common:['Gotu Kola','Calendula','Nettle']}
+},
+{
+  cat:'skin',
+  scenario:"A client has poor wound healing, varicose veins, and a tendency to bruising. They have a history of venous insufficiency and want to strengthen vascular integrity.",
+  latin:'Centella asiatica', action:'Connective tissue tonic / Vulnerary', common:'Gotu Kola',
+  feedback:"Gotu Kola triterpenoids directly stimulate collagen synthesis and strengthen the integrity of vessel walls. It is clinically evidenced for venous insufficiency, wound healing, and scar reduction. The combination of poor healing, varicose veins, and easy bruising all point to connective tissue and vascular weakness — Gotu Kola addresses all three simultaneously.",
+  distractors:{latin:['Equisetum arvense','Ruscus aculeatus','Calendula officinalis'],action:['Diuretic','Venotonic','Anti-inflammatory'],common:['Horsetail',"Butcher's Broom",'Calendula']}
+},
+
+// ===== MUSHROOMS =====
+{
+  cat:'mushrooms',
+  scenario:"A client has chronic fatigue, recurrent infections, and is recovering from a period of prolonged stress. They want deep, long-term immune rebuilding over several months.",
+  latin:'Ganoderma lucidum', action:'Adaptogen / Immunomodulator', common:'Reishi',
+  feedback:"Reishi is the foundational mushroom for long-term immune modulation and stress resilience. Its triterpenes calm the nervous system while beta-glucans rebuild immune competence. The combination of chronic fatigue, immune weakness, and stress history is the classic Reishi picture. Not for acute illness — for deep, slow rebuilding.",
+  distractors:{latin:['Trametes versicolor','Hericium erinaceus','Inonotus obliquus'],action:['Antitumour','Cognitive tonic','Antioxidant'],common:["Turkey Tail","Lion's Mane",'Chaga']}
+},
+{
+  cat:'mushrooms',
+  scenario:"A client in their 50s is experiencing memory lapses, difficulty concentrating, and early cognitive decline. They want neuroprotective support.",
+  latin:'Hericium erinaceus', action:'Cognitive tonic / Nervine tonic', common:"Lion's Mane",
+  feedback:"Lion's Mane is the only mushroom known to stimulate Nerve Growth Factor (NGF) and Brain-Derived Neurotrophic Factor (BDNF), promoting the growth and repair of nerve tissue. It is the specific mushroom for cognitive decline, memory, and neurodegeneration. Clinical trials show improvements in mild cognitive impairment.",
+  distractors:{latin:['Ganoderma lucidum','Cordyceps sinensis','Ginkgo biloba'],action:['Adaptogen','Antifatigue','Vasodilator'],common:['Reishi','Cordyceps','Ginkgo']}
+},
+{
+  cat:'mushrooms',
+  scenario:"A client is a cyclist training for a long-distance event. They want to improve oxygen utilisation, endurance, and reduce post-exercise fatigue.",
+  latin:'Cordyceps sinensis', action:'Antifatigue / Adaptogen', common:'Cordyceps',
+  feedback:"Cordyceps increases ATP production in mitochondria and improves VO2 max and oxygen utilisation. It is the performance mushroom — used by athletes for endurance and recovery. Clinical research shows significant improvements in exercise capacity. Distinct from Reishi which suits chronic fatigue recovery rather than active athletic performance.",
+  distractors:{latin:['Ganoderma lucidum','Hericium erinaceus','Eleutherococcus senticosus'],action:['Immunomodulator','Cognitive tonic','Immunostimulant'],common:['Reishi',"Lion's Mane",'Siberian Ginseng']}
+},
+{
+  cat:'mushrooms',
+  scenario:"A client is undergoing chemotherapy for breast cancer. Their oncologist is supportive of integrative approaches. They want immune support specifically evidenced for cancer care.",
+  latin:'Trametes versicolor', action:'Immunomodulator / Antitumour', common:"Turkey Tail",
+  feedback:"Turkey Tail contains PSK (krestin) and PSP — polysaccharide-protein complexes used as standard adjunct cancer therapy in Japan and China. They have been shown in clinical trials to improve survival rates and immune function during chemotherapy. Turkey Tail is the most clinically evidenced mushroom for oncology support.",
+  distractors:{latin:['Ganoderma lucidum','Hericium erinaceus','Inonotus obliquus'],action:['Adaptogen','Cognitive tonic','Antioxidant'],common:['Reishi',"Lion's Mane",'Chaga']}
+},
+{
+  cat:'mushrooms',
+  scenario:"A client has high oxidative stress markers, a history of heavy smoking, and wants antioxidant and immune support. They have heard about a mushroom used in Northern European traditional medicine.",
+  latin:'Inonotus obliquus', action:'Antioxidant / Immunomodulator', common:'Chaga',
+  feedback:"Chaga has one of the highest ORAC (antioxidant) scores of any measured substance. It grows on birch trees and concentrates betulinic acid, which has antitumour and antiviral properties. Its melanin pigments and beta-glucans provide potent antioxidant and immune-modulating effects. The smoking history and oxidative stress picture makes Chaga the specific choice.",
+  distractors:{latin:['Ganoderma lucidum','Trametes versicolor','Lycium barbarum'],action:['Adaptogen','Antitumour','Nutritive'],common:['Reishi',"Turkey Tail",'Goji Berry']}
+},
+// ===== HORMONAL =====
+{
+  cat:'hormonal',
+  scenario:"A male client in their 40s has an enlarged prostate — urinary frequency, weak stream, and nocturia. Diagnosis of benign prostatic hyperplasia confirmed.",
+  latin:'Serenoa repens', action:'Antiandrogenic / Anti-inflammatory', common:'Saw Palmetto',
+  feedback:"Saw Palmetto inhibits 5-alpha reductase, reducing conversion of testosterone to DHT — the androgen driving prostate tissue proliferation in BPH. It is the most researched herbal treatment for BPH with clinical trials showing significant improvement in urinary symptoms. Also anti-inflammatory within prostate tissue.",
+  distractors:{latin:['Tribulus terrestris','Urtica dioica','Pygeum africanum'],action:['Androgenic','Nutritive','Bitter tonic'],common:['Tribulus','Nettle','Pygeum']}
+},
+{
+  cat:'hormonal',
+  scenario:"A client has hypothyroid symptoms — fatigue, weight gain, cold intolerance, dry skin, and constipation. Subclinical hypothyroidism confirmed. They want nutritive thyroid support.",
+  latin:'Fucus vesiculosus', action:'Thyroid tonic / Nutritive', common:'Bladderwrack',
+  feedback:"Bladderwrack is the richest plant source of iodine, essential for thyroid hormone synthesis. Iodine deficiency is a primary driver of hypothyroidism globally. It also contains alginates that support gut health. Must be used carefully — excess iodine can paradoxically worsen thyroid function in autoimmune thyroiditis.",
+  distractors:{latin:['Withania somnifera','Bacopa monnieri','Coleus forskohlii'],action:['Adaptogen','Cognitive tonic','Bronchodilator'],common:['Ashwagandha','Bacopa','Coleus']}
+},
+{
+  cat:'hormonal',
+  scenario:"A client has adrenal exhaustion — long-term stress, waking unrefreshed, afternoon energy crashes, salt cravings, and low blood pressure. Cortisol testing shows flat diurnal curve.",
+  latin:'Glycyrrhiza glabra', action:'Adrenal tonic / Demulcent', common:'Licorice',
+  feedback:"Licorice root inhibits the enzyme that breaks down cortisol (11-beta-HSD), effectively extending the life of available cortisol. This makes it specific for adrenal exhaustion with low cortisol. The salt cravings and low blood pressure are classic adrenal insufficiency signs. Contraindicated in hypertension — always check blood pressure first.",
+  distractors:{latin:['Withania somnifera','Rehmannia glutinosa','Eleutherococcus senticosus'],action:['Adaptogen','Yin tonic','Immunomodulator'],common:['Ashwagandha','Rehmannia','Siberian Ginseng']}
+},
+];
+
+// =====================================================
+// STATE
+// =====================================================
+const SESSION_SIZE = 10;
+let state = {
+  cat: 'all',
+  mode: 'study',
+  questions: [],
+  current: 0,
+  score: 0,
+  maxScore: 0,
+  streak: 0,
+  results: [],
+  selected: {latin: null, action: null, common: null},
+  answered: false,
+  timerInterval: null,
+  timeLeft: 15,
+  totalTime: 15
+};
+
+// =====================================================
+// NAVIGATION
+// =====================================================
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'scores') renderScores();
+}
+
+// =====================================================
+// SETUP
+// =====================================================
+function selectCat(el) {
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  state.cat = el.dataset.cat;
+}
+
+function setMode(m) {
+  state.mode = m;
+  document.getElementById('mb-study').classList.toggle('active', m === 'study');
+  document.getElementById('mb-timed').classList.toggle('active', m === 'timed');
+}
+
+function startQuiz() {
+  const pool = state.cat === 'all' ? QUESTIONS : QUESTIONS.filter(q => q.cat === state.cat);
+  if (pool.length === 0) { alert('No questions for this category yet!'); return; }
+  state.questions = shuffle(pool).slice(0, Math.min(SESSION_SIZE, pool.length));
+  state.maxScore = state.questions.length * 3;
+  state.current = 0; state.score = 0; state.streak = 0; state.results = [];
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('quiz-ui').style.display = 'block';
+  renderQ();
+}
+
+function shuffle(a) { return [...a].sort(() => Math.random() - .5); }
+
+// =====================================================
+// RENDER QUESTION
+// =====================================================
+function renderQ() {
+  state.answered = false;
+  state.selected = {latin: null, action: null, common: null};
+  clearTimer();
+
+  const q = state.questions[state.current];
+  document.getElementById('feedback').classList.remove('show','fb-correct','fb-partial','fb-wrong');
+  document.getElementById('next-btn').classList.remove('show');
+
+  // Stats
+  document.getElementById('q-score').textContent = state.score;
+  document.getElementById('q-streak').textContent = state.streak + (state.streak >= 3 ? '🔥' : '');
+  document.getElementById('q-prog').textContent = `${state.current + 1}/${state.questions.length}`;
+  document.getElementById('q-acc').textContent = state.current === 0 ? '—' : Math.round(state.score / (state.current * 3) * 100) + '%';
+  document.getElementById('prog-fill').style.width = (state.current / state.questions.length * 100) + '%';
+
+  // Category pill
+  const pill = document.getElementById('sc-cat-pill');
+  pill.className = 'sc-cat ' + q.cat;
+  const catLabels = {immune:'Immune',gut:'Gut',skin:'Skin',stress:'Stress / Mood',pain:'Pain',respiratory:'Respiratory',hormonal:'Hormonal',mushrooms:'Mushrooms'};
+  pill.textContent = catLabels[q.cat];
+  document.getElementById('sc-qnum').textContent = `Q${state.current + 1}`;
+  document.getElementById('sc-text').innerHTML = q.scenario;
+
+  // Build options
+  renderCol('col-latin', 'latin', [q.latin, ...q.distractors.latin]);
+  renderCol('col-action', 'action', [q.action, ...q.distractors.action]);
+  renderCol('col-common', 'common', [q.common, ...q.distractors.common]);
+
+  // Animate card
+  const card = document.getElementById('sc-card');
+  card.style.animation = 'none'; void card.offsetWidth; card.style.animation = 'cardIn .4s ease both';
+
+  // Timer
+  if (state.mode === 'timed') startTimer();
+  document.getElementById('timer-wrap').classList.toggle('show', state.mode === 'timed');
+}
+
+function renderCol(colId, type, opts) {
+  const shuffled = shuffle(opts);
+  const col = document.getElementById(colId);
+  col.innerHTML = '';
+  shuffled.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.textContent = opt;
+    btn.dataset.val = opt;
+    btn.dataset.type = type;
+    btn.onclick = () => selectAnswer(type, opt, btn);
+    col.appendChild(btn);
+  });
+}
+
+// =====================================================
+// ANSWER SELECTION
+// =====================================================
+function selectAnswer(type, val, btn) {
+  if (state.answered) return;
+  // Deselect previous in same column
+  const col = btn.parentElement;
+  col.querySelectorAll('.ans-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.selected[type] = val;
+  // Check if all three selected
+  if (state.selected.latin && state.selected.action && state.selected.common) {
+    setTimeout(() => submitAnswer(), 150);
+  }
+}
+
+function submitAnswer() {
+  if (state.answered) return;
+  state.answered = true;
+  clearTimer();
+
+  const q = state.questions[state.current];
+  const latinOk = state.selected.latin === q.latin;
+  const actionOk = state.selected.action === q.action;
+  const commonOk = state.selected.common === q.common;
+  const pts = [latinOk, actionOk, commonOk].filter(Boolean).length;
+
+  state.score += pts;
+  if (pts === 3) state.streak++; else state.streak = 0;
+  state.results.push({herb: q.common, pts, latin: q.latin, action: q.action, common: q.common});
+
+  // Update stats
+  document.getElementById('q-score').textContent = state.score;
+  document.getElementById('q-streak').textContent = state.streak + (state.streak >= 3 ? '🔥' : '');
+  document.getElementById('q-acc').textContent = Math.round(state.score / ((state.current + 1) * 3) * 100) + '%';
+
+  // Highlight all columns
+  revealCol('col-latin', 'latin', q.latin, latinOk);
+  revealCol('col-action', 'action', q.action, actionOk);
+  revealCol('col-common', 'common', q.common, commonOk);
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  const fbClass = pts === 3 ? 'fb-correct' : pts > 0 ? 'fb-partial' : 'fb-wrong';
+  fb.classList.add('show', fbClass);
+  
+  document.getElementById('fb-title').textContent = pts === 3 ? `✓ 3/3 — Perfect` : pts > 0 ? `◑ ${pts}/3 — Partial` : `✗ 0/3 — Missed`;
+  document.getElementById('fb-body').innerHTML = q.feedback;
+  const correctHtml = !latinOk || !actionOk || !commonOk ?
+    `Correct: <span>${q.latin}</span> · <span>${q.action}</span> · <span>${q.common}</span>` : '';
+  document.getElementById('fb-correct').innerHTML = correctHtml;
+
+  document.getElementById('next-btn').classList.add('show');
+  document.getElementById('next-btn').textContent = state.current + 1 >= state.questions.length ? 'See Results →' : 'Next →';
+}
+
+function revealCol(colId, type, correct, wasCorrect) {
+  const col = document.getElementById(colId);
+  col.querySelectorAll('.ans-btn').forEach(btn => {
+    btn.disabled = true;
+    const val = btn.dataset.val;
+    if (val === correct) {
+      btn.classList.remove('selected');
+      btn.classList.add('correct');
+    } else if (btn.classList.contains('selected') && val !== correct) {
+      btn.classList.remove('selected');
+      btn.classList.add('wrong');
+    } else {
+      btn.classList.add('reveal');
+    }
+  });
+}
+
+// =====================================================
+// TIMER
+// =====================================================
+function startTimer() {
+  state.timeLeft = state.totalTime;
+  updateTimerBar();
+  state.timerInterval = setInterval(() => {
+    state.timeLeft -= 0.1;
+    updateTimerBar();
+    if (state.timeLeft <= 0) {
+      clearTimer();
+      if (!state.answered) {
+        state.selected.latin = state.selected.latin || '__timeout__';
+        state.selected.action = state.selected.action || '__timeout__';
+        state.selected.common = state.selected.common || '__timeout__';
+        submitAnswer();
+      }
+    }
+  }, 100);
+}
+
+function updateTimerBar() {
+  const pct = Math.max(0, state.timeLeft / state.totalTime * 100);
+  document.getElementById('timer-fill').style.width = pct + '%';
+}
+
+function clearTimer() {
+  if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+}
+
+// =====================================================
+// NEXT / RESULTS
+// =====================================================
+function nextQ() {
+  state.current++;
+  if (state.current >= state.questions.length) { showResults(); return; }
+  renderQ();
+}
+
+function showResults() {
+  clearTimer();
+  document.getElementById('quiz-ui').style.display = 'none';
+  const rs = document.getElementById('result');
+  rs.classList.add('show');
+
+  const pct = Math.round(state.score / state.maxScore * 100);
+  const icon = pct >= 90 ? '🌳' : pct >= 70 ? '🌿' : pct >= 50 ? '🌱' : '🪴';
+  document.getElementById('res-icon').textContent = icon;
+  document.getElementById('res-score').textContent = `${state.score}/${state.maxScore}`;
+  document.getElementById('res-label').textContent = `${pct}% · ${pct >= 90 ? 'Excellent!' : pct >= 70 ? 'Well done' : pct >= 50 ? 'Keep studying' : 'Back to the books'}`;
+
+  document.getElementById('breakdown').innerHTML = state.results.map(r => `
+    <div class="bd-row">
+      <span class="bd-herb">${r.herb}</span>
+      <span class="bd-pts bd-${r.pts}">${r.pts}/3</span>
+    </div>`).join('');
+
+  // Save high score
+  saveScore(state.cat, state.score, state.maxScore);
+}
+
+function restartQuiz() {
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('quiz-ui').style.display = 'block';
+  state.questions = shuffle(state.questions.length > 0 ? (state.cat === 'all' ? QUESTIONS : QUESTIONS.filter(q => q.cat === state.cat)) : QUESTIONS).slice(0, SESSION_SIZE);
+  state.maxScore = state.questions.length * 3;
+  state.current = 0; state.score = 0; state.streak = 0; state.results = [];
+  renderQ();
+}
+
+function goSplash() {
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('splash').style.display = 'block';
+}
+
+// =====================================================
+// EXIT
+// =====================================================
+function exitQuiz() {
+  clearTimer();
+  document.getElementById("quiz-ui").style.display = "none";
+  document.getElementById("result").classList.remove("show");
+  document.getElementById("splash").style.display = "block";
+}
+
+// =====================================================
+// HIGH SCORES (localStorage)
+// =====================================================
+function saveScore(cat, score, max) {
+  try {
+    const key = 'herbarium_scores';
+    const scores = JSON.parse(localStorage.getItem(key) || '{}');
+    const catKey = cat;
+    if (!scores[catKey]) scores[catKey] = {best: 0, bestMax: max, played: 0};
+    scores[catKey].played++;
+    scores[catKey].bestMax = max;
+    if (score > scores[catKey].best) scores[catKey].best = score;
+    localStorage.setItem(key, JSON.stringify(scores));
+  } catch(e) {}
+}
+
+function renderScores() {
+  try {
+    const scores = JSON.parse(localStorage.getItem('herbarium_scores') || '{}');
+    const cats = ['all','immune','gut','skin','stress','pain','respiratory','hormonal','mushrooms'];
+    const catColors = {all:'var(--teal)',immune:'var(--immune)',gut:'var(--gut)',skin:'var(--skin)',stress:'var(--stress)',pain:'var(--pain)',respiratory:'var(--resp)',hormonal:'var(--hormonal)',mushrooms:'#c8a87e'};
+    const catLabels = {all:'All Categories',immune:'Immune',gut:'Gut',skin:'Skin',stress:'Stress / Mood',pain:'Pain',respiratory:'Respiratory',hormonal:'Hormonal',mushrooms:'Mushrooms'};
+    document.getElementById('score-grid').innerHTML = cats.map(cat => {
+      const s = scores[cat];
+      const pct = s ? Math.round(s.best / s.bestMax * 100) : 0;
+      return `<div class="score-card">
+        <div>
+          <div class="sc-name"><span class="sc-dot" style="background:${catColors[cat]}"></span>${catLabels[cat]}</div>
+          <div class="sc-played">${s ? s.played + ' sessions played' : 'Not played yet'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="sc-best">${s ? s.best + '/' + s.bestMax : '—'}</div>
+          <div class="sc-best-label">${s ? pct + '% best' : 'No score yet'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function clearScores() {
+  if (confirm('Reset all high scores?')) {
+    try { localStorage.removeItem('herbarium_scores'); renderScores(); } catch(e) {}
+  }
+}
+</script>
+</body>
+</html>
